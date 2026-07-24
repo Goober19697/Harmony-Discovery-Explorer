@@ -22,7 +22,7 @@ import {
   previousCandidateIndex,
 } from "./candidatePool.js";
 import { analyzeVoicing, analyzeVoicingOptions, QUALITIES } from "./chordPatterns.js";
-import { checkBackendHealth } from "./services/api.js";
+import { checkBackendHealth, saveVoicing } from "./services/api";
 
 // ---------- music theory helpers ----------
 
@@ -366,6 +366,22 @@ export default function HarmonyDiscoveryExplorer() {
 
   connectToBackend();
 }, []);
+
+async function saveNegativeHarmonyVoicing() {
+  try {
+    const result = await saveVoicing({
+      notes: negativeNotes.join(" "),
+      chord_name: negativeHarmonyLabel(negativeNotes),
+      emotion: "Negative Harmony",
+    });
+
+    console.log("Voicing saved:", result);
+    alert("Voicing saved!");
+  } catch (error) {
+    console.error("Unable to save voicing:", error);
+    alert("Unable to save voicing.");
+  }
+}
 
   function volumeToDb(pct) {
     if (pct <= 0) return -Infinity;
@@ -1499,6 +1515,18 @@ export default function HarmonyDiscoveryExplorer() {
                         onClick={addNegativeHarmony}
                       >
                         Add it →
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={saveNegativeHarmonyVoicing}
+                        style={{
+                          display: "block",
+                          marginTop: "10px",
+                          padding: "10px 16px",
+                    }}
+                      >
+                        Save
                       </button>
                     </div>
                   </div>
