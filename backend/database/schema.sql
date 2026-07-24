@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS voicings (
+    id BIGSERIAL PRIMARY KEY,
+    notes TEXT NOT NULL,
+    chord_name VARCHAR(100),
+    emotion VARCHAR(100),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

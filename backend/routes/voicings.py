@@ -1,0 +1,23 @@
+from flask import Blueprint, jsonify, request
+
+from services.voicing_service import create_voicing
+
+voicings_blueprint = Blueprint("voicings", __name__)
+
+
+@voicings_blueprint.route("/api/voicings", methods=["POST"])
+def save_voicing():
+    data = request.get_json(silent=True) or {}
+
+    try:
+        saved_voicing = create_voicing(data)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+    except Exception as error:
+        print(f"Failed to save voicing: {error}")
+        return jsonify({"error": "Unable to save voicing"}), 500
+
+    return jsonify({
+        "message": "Voicing saved",
+        "voicing": saved_voicing,
+    }), 201

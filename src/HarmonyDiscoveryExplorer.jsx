@@ -22,6 +22,7 @@ import {
   previousCandidateIndex,
 } from "./candidatePool.js";
 import { analyzeVoicing, analyzeVoicingOptions, QUALITIES } from "./chordPatterns.js";
+import { checkBackendHealth } from "./services/api.js";
 
 // ---------- music theory helpers ----------
 
@@ -347,8 +348,24 @@ export default function HarmonyDiscoveryExplorer() {
   const [showNegativeHarmony, setShowNegativeHarmony] = useState(false);
   const [bassOrder, setBassOrder] = useState("ascending");
   const [volume, setVolume] = useState(100); // 0-100
+  const [backendStatus, setBackendStatus] = useState("Checking backend...");
   const synthRef = useRef(null);
   const committedText = history[history.length - 1].text;
+
+  useEffect(() => {
+  async function connectToBackend() {
+    try {
+      const data = await checkBackendHealth();
+      setBackendStatus(data.message);
+      console.log("Backend connection:", data);
+    } catch (error) {
+      console.error("Backend connection failed:", error);
+      setBackendStatus("Backend connection failed");
+    }
+  }
+
+  connectToBackend();
+}, []);
 
   function volumeToDb(pct) {
     if (pct <= 0) return -Infinity;
