@@ -13,17 +13,12 @@ export function candidateNaming(generatedName, analyses, names) {
   const format = analysis =>
     names[analysis.rootPc] + analysis.suffix + (analysis.rootless ? " (rootless)" : "");
 
-  // A generated conventional name is more useful than a raw interval list.
-  // Keep the interval analysis visible as an alias instead of leading with it.
   if (!primaryAnalysis || primaryAnalysis.fallback) {
-    const aliases = primaryAnalysis ? analyses.map(format) : [];
-    return { name: generatedName, aliases };
+    return { name: generatedName, aliases: [] };
   }
 
   const name = format(primaryAnalysis);
-  const aliases = analyses.slice(1).map(format);
-  if (generatedName !== name && !aliases.includes(generatedName)) aliases.push(generatedName);
-  return { name, aliases };
+  return { name, aliases: [] };
 }
 
 export function compareCandidates(a, b, bassOrder = "ascending") {

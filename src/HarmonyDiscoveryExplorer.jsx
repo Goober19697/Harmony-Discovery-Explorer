@@ -367,12 +367,16 @@ export default function HarmonyDiscoveryExplorer() {
   connectToBackend();
 }, []);
 
-async function saveNegativeHarmonyVoicing() {
+async function handleSaveVoicing(notes, chordName, emotion) {
   try {
+    const formattedNotes = Array.isArray(notes)
+      ? notes.join(" ")
+      : notes;
+
     const result = await saveVoicing({
-      notes: negativeNotes.join(" "),
-      chord_name: negativeHarmonyLabel(negativeNotes),
-      emotion: "Negative Harmony",
+      notes: formattedNotes,
+      chord_name: chordName,
+      emotion,
     });
 
     console.log("Voicing saved:", result);
@@ -669,10 +673,9 @@ async function saveNegativeHarmonyVoicing() {
         const generatedName = names[root] + (suffix || "");
         const existing = byNoteSet.get(setKey);
         if (existing) {
-          // same physical notes, different analysis — keep as alias
-          if (!existing.aliases.includes(generatedName) && existing.name !== generatedName) {
-            existing.aliases.push(generatedName);
-          }
+          // Different formulas can collapse to the same physical voicing when
+          // there are fewer voices than formula tones. Do not present those
+          // unused formulas as aliases for notes that are not actually played.
           continue;
         }
 
@@ -1454,7 +1457,22 @@ async function saveNegativeHarmonyVoicing() {
             <div className="vl-panel" style={{ paddingBottom: 16 }}>
               <div className="vl-current-row">
                 <div>
-                  <div className="vl-current-name">{currentLabel || "Custom voicing"}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <div className="vl-current-name">{currentLabel || "Custom voicing"}</div>
+                    <button
+                      type="button"
+                      className="vl-row-apply"
+                      onClick={() =>
+                        handleSaveVoicing(
+                          currentNotes,
+                          currentLabel || "Custom voicing",
+                          "Current Voicing"
+                        )
+                      }
+                    >
+                      Save
+                    </button>
+                  </div>
                   {currentOptionalLabels.length > 0 && (
                     <div className="vl-current-aliases">
                       Also: {currentOptionalLabels.join(" / ")}
@@ -1492,8 +1510,23 @@ async function saveNegativeHarmonyVoicing() {
                 <div className="vl-negative-shadow">
                   <div className="vl-negative-kicker">Shadow voicing</div>
                   <div className="vl-current-row">
-                    <div className="vl-current-name">
-                      {negativeHarmonyLabel(negativeNotes)}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <div className="vl-current-name">
+                        {negativeHarmonyLabel(negativeNotes)}
+                      </div>
+                      <button
+                        type="button"
+                        className="vl-row-apply"
+                        onClick={() =>
+                          handleSaveVoicing(
+                            negativeNotes,
+                            negativeHarmonyLabel(negativeNotes),
+                            "Negative Harmony"
+                          )
+                        }
+                      >
+                        Save
+                      </button>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <span className="vl-current-notes">
@@ -1515,18 +1548,6 @@ async function saveNegativeHarmonyVoicing() {
                         onClick={addNegativeHarmony}
                       >
                         Add it →
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={saveNegativeHarmonyVoicing}
-                        style={{
-                          display: "block",
-                          marginTop: "10px",
-                          padding: "10px 16px",
-                    }}
-                      >
-                        Save
                       </button>
                     </div>
                   </div>
@@ -1558,11 +1579,26 @@ async function saveNegativeHarmonyVoicing() {
                 <div className="vl-list">
                     <div className="vl-row" key={r.key}>
                       <div className="vl-row-name">
-                        <div className="vl-row-chord">
-                          {r.name}
-                          {r.aliases.length > 0 && (
-                            <span className="vl-row-alias"> / {r.aliases.join(" / ")}</span>
-                          )}
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <div className="vl-row-chord">
+                            {r.name}
+                            {r.aliases.length > 0 && (
+                              <span className="vl-row-alias"> / {r.aliases.join(" / ")}</span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            className="vl-row-apply"
+                            onClick={() =>
+                              handleSaveVoicing(
+                                selectedNotes,
+                                r.name,
+                                activeGroup?.label || "Generated Voicing"
+                              )
+                            }
+                          >
+                            Save
+                          </button>
                         </div>
                         {r.mood && <div className="vl-row-mood">{r.mood}</div>}
                       </div>
@@ -1620,9 +1656,11 @@ async function saveNegativeHarmonyVoicing() {
                       >
                         Next
                       </button>
-                      <button className="vl-row-apply" onClick={() => applyResult(r)}>
-                        Add it →
-                      </button>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                        <button className="vl-row-apply" onClick={() => applyResult(r)}>
+                          Add it →
+                        </button>
+                      </div>
                     </div>
                     <div className="vl-piano-wrap">
                       <PianoKeys midis={selectedNotes} flats={r.flats} />

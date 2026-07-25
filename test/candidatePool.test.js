@@ -48,7 +48,7 @@ test("candidate pools remove duplicate physical voicings", () => {
   assert.deepEqual(distinctCandidates([...candidates, duplicate]), candidates);
 });
 
-test("a generated chord name leads and its interval fallback remains an alias", () => {
+test("fallback analyses do not expose alternate aliases", () => {
   const analyses = [{
     rootPc: 7,
     suffix: "(11,13,♭7)",
@@ -57,15 +57,15 @@ test("a generated chord name leads and its interval fallback remains an alias", 
   }];
   assert.deepEqual(candidateNaming("Gm13", analyses, noteNames), {
     name: "Gm13",
-    aliases: ["G(11,13,♭7)"],
+    aliases: [],
   });
 });
 
-test("a recognized analysis can replace an ambiguous generated name", () => {
+test("recognized analyses do not expose alternate aliases", () => {
   const analyses = [{ rootPc: 7, suffix: "m13", rootless: false }];
   assert.deepEqual(candidateNaming("A#maj13♯11", analyses, noteNames), {
     name: "Gm13",
-    aliases: ["A#maj13♯11"],
+    aliases: [],
   });
 });
 
