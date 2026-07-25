@@ -22,7 +22,7 @@ import {
   previousCandidateIndex,
 } from "./candidatePool.js";
 import { analyzeVoicing, analyzeVoicingOptions, QUALITIES } from "./chordPatterns.js";
-import { checkBackendHealth, saveVoicing } from "./services/api";
+import { checkBackendHealth, saveProgression, saveVoicing } from "./services/api";
 
 // ---------- music theory helpers ----------
 
@@ -349,6 +349,8 @@ export default function HarmonyDiscoveryExplorer() {
   const [bassOrder, setBassOrder] = useState("ascending");
   const [volume, setVolume] = useState(100); // 0-100
   const [backendStatus, setBackendStatus] = useState("Checking backend...");
+  const [progressionSaveStatus, setProgressionSaveStatus] = useState(null);
+  const [progressionSaving, setProgressionSaving] = useState(false);
   const synthRef = useRef(null);
   const committedText = history[history.length - 1].text;
 
@@ -384,6 +386,49 @@ async function handleSaveVoicing(notes, chordName, emotion) {
   } catch (error) {
     console.error("Unable to save voicing:", error);
     alert("Unable to save voicing.");
+  }
+}
+
+async function handleSaveProgression() {
+  const progression = history
+    .map((entry, index) => {
+      const notes = parseVoicing(entry.text).midis;
+      if (!notes.length) return null;
+
+      return {
+        chord_name: historyLabels[index],
+        notes: entry.text.trim(),
+        midi_notes: notes,
+        ...(entry.emotion ? { emotion: entry.emotion } : {}),
+      };
+    })
+    .filter(Boolean);
+
+  if (progression.length === 0) {
+    setProgressionSaveStatus({
+      type: "error",
+      message: "Add at least one chord before saving a progression.",
+    });
+    return;
+  }
+
+  setProgressionSaving(true);
+  setProgressionSaveStatus(null);
+
+  try {
+    await saveProgression({
+      title: "Untitled Progression",
+      progression,
+    });
+    setProgressionSaveStatus({ type: "success", message: "Progression saved!" });
+  } catch (error) {
+    console.error("Progression save failed:", error);
+    setProgressionSaveStatus({
+      type: "error",
+      message: error.message || "Progression could not be saved. Please try again.",
+    });
+  } finally {
+    setProgressionSaving(false);
   }
 }
 
@@ -754,7 +799,7 @@ async function handleSaveVoicing(notes, chordName, emotion) {
     const names = r.targets.map(t => spellMidiForChord(t.to, r.rootPc, r.suffix));
     const text = names.join(" ");
     setRawText(text);
-    setHistory(h => [...h, { text, label: r.name }]);
+    setHistory(h => [...h, { text, label: r.name, emotion: r.category }]);
     setError(null);
   }
 
@@ -765,7 +810,11 @@ async function handleSaveVoicing(notes, chordName, emotion) {
     setRawText(text);
     setHistory(historyEntries => [
       ...historyEntries,
-      { text, label: negativeHarmonyLabel(negativeNotes) },
+      {
+        text,
+        label: negativeHarmonyLabel(negativeNotes),
+        emotion: "Negative Harmony",
+      },
     ]);
     setError(null);
   }
@@ -1213,6 +1262,33 @@ async function handleSaveVoicing(notes, chordName, emotion) {
           padding: 4px 2px;
         }
         .vl-trail-clear:hover { color: var(--rust); }
+        .vl-save-progression {
+          margin-left: 6px;
+          padding: 7px 13px;
+          border-radius: 7px;
+          border: 1px solid var(--sage);
+          background: rgba(111,169,140,0.14);
+          color: var(--ink);
+          font-family: 'Inter', sans-serif;
+          font-size: 11px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .vl-save-progression:hover {
+          background: rgba(111,169,140,0.25);
+        }
+        .vl-save-progression:disabled {
+          cursor: wait;
+          opacity: 0.65;
+        }
+        .vl-progression-status {
+          flex-basis: 100%;
+          margin: 2px 0 0 40px;
+          font-family: 'Inter', sans-serif;
+          font-size: 11px;
+        }
+        .vl-progression-status.success { color: var(--sage); }
+        .vl-progression-status.error { color: var(--rust); }
         .vl-legend {
           display: flex; gap: 16px; margin-top: 18px; font-size: 11.5px; color: var(--ink-dim);
           font-family: 'JetBrains Mono', monospace;
@@ -1399,6 +1475,22 @@ async function handleSaveVoicing(notes, chordName, emotion) {
             >
               clear trail
             </button>
+            <button
+              type="button"
+              className="vl-save-progression"
+              onClick={handleSaveProgression}
+              disabled={progressionSaving}
+            >
+              {progressionSaving ? "Saving…" : "Save Progression"}
+            </button>
+            {progressionSaveStatus && (
+              <div
+                className={`vl-progression-status ${progressionSaveStatus.type}`}
+                role={progressionSaveStatus.type === "error" ? "alert" : "status"}
+              >
+                {progressionSaveStatus.message}
+              </div>
+            )}
           </div>
         )}
 

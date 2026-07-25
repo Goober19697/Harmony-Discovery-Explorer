@@ -27,3 +27,21 @@ export async function saveVoicing(voicing) {
 
   return data;
 }
+
+export async function saveProgression(progression) {
+  const response = await fetch(`${API_BASE_URL}/api/progressions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(progression),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || `Backend returned status ${response.status}`);
+  }
+
+  return data;
+}
