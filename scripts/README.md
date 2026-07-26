@@ -31,3 +31,16 @@ services, images, or containers.
 
 `doctor` exits with a non-zero status when a critical environment check fails.
 A dirty working tree is reported for awareness but is not itself a failure.
+
+## Production commands
+
+Deployment remains a separate, explicit operation. The production Flask entry
+point is run from `backend/` with:
+
+``` bash
+APP_ENV=production gunicorn --bind 0.0.0.0:5001 app:app
+```
+
+Set `SECRET_KEY`, `DATABASE_URL`, and the exact `FRONTEND_ORIGIN` in the runtime
+environment. See the root README and `.env.example` for the complete,
+non-secret configuration contract.

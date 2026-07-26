@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, current_app, jsonify, request, session
 
 from services.auth_service import (
     DuplicateEmailError,
@@ -19,8 +19,8 @@ def register():
         return jsonify({"error": str(error)}), 409
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
-    except Exception as error:
-        print(f"Failed to register user: {error}")
+    except Exception:
+        current_app.logger.exception("Failed to register user")
         return jsonify({"error": "Unable to create account."}), 500
 
     session.clear()
@@ -36,8 +36,8 @@ def login():
 
     try:
         user = authenticate_user(data.get("email"), data.get("password"))
-    except Exception as error:
-        print(f"Failed to log in user: {error}")
+    except Exception:
+        current_app.logger.exception("Failed to log in user")
         return jsonify({"error": "Unable to log in."}), 500
 
     if user is None:
@@ -62,8 +62,8 @@ def current_user():
 
     try:
         user = find_user_by_id(user_id)
-    except Exception as error:
-        print(f"Failed to load current user: {error}")
+    except Exception:
+        current_app.logger.exception("Failed to load current user")
         return jsonify({"error": "Unable to load account."}), 500
 
     if user is None:

@@ -1,4 +1,4 @@
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request
 
 from services.auth_guard import login_required
 from services.progression_service import (
@@ -16,8 +16,8 @@ progressions_blueprint = Blueprint("progressions", __name__)
 def get_progressions():
     try:
         progressions = list_progressions(g.user_id)
-    except Exception as error:
-        print(f"Failed to load progressions: {error}")
+    except Exception:
+        current_app.logger.exception("Failed to load progressions")
         return jsonify({"error": "Unable to load progressions"}), 500
 
     return jsonify({"progressions": progressions}), 200
@@ -32,8 +32,8 @@ def patch_progression(progression_id):
         updated_progression = update_progression(g.user_id, progression_id, data)
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
-    except Exception as error:
-        print(f"Failed to update progression: {error}")
+    except Exception:
+        current_app.logger.exception("Failed to update progression")
         return jsonify({"error": "Unable to update progression"}), 500
 
     if updated_progression is None:
@@ -50,8 +50,8 @@ def patch_progression(progression_id):
 def delete_progression(progression_id):
     try:
         deleted = remove_progression(g.user_id, progression_id)
-    except Exception as error:
-        print(f"Failed to delete progression: {error}")
+    except Exception:
+        current_app.logger.exception("Failed to delete progression")
         return jsonify({"error": "Unable to delete progression"}), 500
 
     if not deleted:
@@ -68,8 +68,8 @@ def save_progression():
         saved_progression = create_progression(g.user_id, data)
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
-    except Exception as error:
-        print(f"Failed to save progression: {error}")
+    except Exception:
+        current_app.logger.exception("Failed to save progression")
         return jsonify({"error": "Unable to save progression"}), 500
 
     return jsonify({

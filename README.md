@@ -249,12 +249,15 @@ python -m pip install -r backend/requirements.txt
 psql -d harmony_discovery_explorer -f backend/database/schema.sql
 ```
 
-Copy `.env.example` to `.env`, set a development `SECRET_KEY`, and start the
-backend:
+Copy the safe template for Vite and Flask, set a development `SECRET_KEY` in
+`backend/.env`, and start the backend:
 
 ``` bash
+cp .env.example .env
+cp .env.example backend/.env
 cd backend
-flask --app app run --debug
+source .venv/bin/activate
+python app.py
 ```
 
 In another terminal, start the frontend:
@@ -269,27 +272,44 @@ Open:
 http://localhost:5173
 ```
 
-## Authentication configuration
+## Environment configuration
 
 Authentication uses Flask's signed server-side session interface with an
 HTTP-only cookie. The React client sends credentialed requests to the Flask
 backend. During local HTTP development, keep `SESSION_COOKIE_SECURE=false`.
 Production must use HTTPS and `SESSION_COOKIE_SECURE=true`.
 
-Environment variables:
+Backend variables:
 
--   `SECRET_KEY` — required in production; use a long random value. If omitted,
-    the backend emits a warning and uses an insecure development-only fallback.
+-   `APP_ENV` — `development`, `testing`, or `production`; defaults to
+    `development`. Production startup fails if `SECRET_KEY` is missing.
+-   `SECRET_KEY` — Flask session-signing secret. Use a unique, long random value.
+-   `DATABASE_URL` — PostgreSQL connection URI. If absent, libpq's `PGDATABASE`,
+    `PGUSER`, `PGPASSWORD`, `PGHOST`, `PGPORT`, and `PGSSLMODE` variables are
+    supported. Local development defaults only the database name to
+    `harmony_discovery_explorer`.
 -   `SESSION_COOKIE_SECURE` — `false` for local HTTP, `true` for production HTTPS.
+-   `SESSION_COOKIE_SAMESITE` — `Lax` by default; accepts `Lax`, `Strict`, or
+    `None`. `None` requires a secure cookie.
 -   `API_HOST` — Flask development-server bind address; defaults to `127.0.0.1`.
 -   `API_PORT` — Flask development-server port; defaults to `5001`.
 -   `FLASK_DEBUG` — controls debug mode only when running `backend/app.py`
     directly; defaults to `true` for the existing development workflow.
 -   `FRONTEND_ORIGIN` — exact permitted frontend origin; defaults to
-    `http://localhost:5173`. Wildcard origins are not used with cookies.
--   `VITE_API_BASE_URL` — Flask API origin; defaults to `http://localhost:5001`.
-    Keep its hostname aligned with the frontend hostname for local cookies.
+    `http://localhost:5173` in development and is required in production.
+    Wildcard origins are not used with cookies.
+-   `LOG_LEVEL` — standard Python log level such as `INFO` or `WARNING`.
+
+Frontend variables:
+
+-   `VITE_API_BASE_URL` — Flask API origin. It defaults to
+    `http://localhost:5001` in development and is required for production
+    builds. Keep its hostname aligned with the frontend hostname for cookies.
 -   `VITE_SAMPLE_BASE_URL` — optional piano sample host override.
+
+Only `VITE_*` values are embedded into browser code. Never put secrets in them.
+The committed `.env.example` contains placeholders; local `.env` files are
+ignored by Git and Docker.
 
 Apply additive schema changes without dropping existing saved records:
 
@@ -298,6 +318,52 @@ psql -d harmony_discovery_explorer -f backend/database/schema.sql
 ```
 
 The Phase 1 users table is independent of saved voicings and progressions.
+
+## Production foundation
+
+The intended AWS request path is:
+
+``` text
+Browser
+  → Nginx / HTTPS
+  → React static frontend
+  → /api reverse proxy
+  → Gunicorn / Flask
+  → PostgreSQL
+```
+
+No deployment is performed by this setup. The root `Dockerfile` is a
+multi-stage React build followed by an Nginx static image. Supply the public API
+origin at build time:
+
+``` bash
+docker build \
+  --build-arg VITE_API_BASE_URL=https://example.com \
+  -t harmony-frontend .
+```
+
+The backend has its own production image:
+
+``` bash
+docker build -f backend/Dockerfile -t harmony-backend backend
+```
+
+Outside Docker, run the production server from `backend/`:
+
+``` bash
+APP_ENV=production \
+SECRET_KEY='set-through-your-secret-manager' \
+DATABASE_URL='postgresql://...' \
+FRONTEND_ORIGIN='https://example.com' \
+gunicorn --bind 0.0.0.0:5001 app:app
+```
+
+Production must run behind HTTPS. Set `SESSION_COOKIE_SECURE=true` (the
+production default), use an exact `FRONTEND_ORIGIN`, and do not set a cookie
+domain unless the deployment topology requires it. `GET /api/health/live`
+checks the process; `GET /api/health` returns 200 only when PostgreSQL answers a
+minimal connectivity query, otherwise 503. Neither endpoint exposes connection
+details.
 
 ## Saved-record ownership migration
 

@@ -1,5 +1,13 @@
-FROM nginx:alpine
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY index.html vite.config.js ./
+COPY src ./src
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+RUN test -n "$VITE_API_BASE_URL" && npm run build
 
-COPY dist /usr/share/nginx/html
-
+FROM nginx:1.27-alpine
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80

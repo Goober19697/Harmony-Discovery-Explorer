@@ -1,3 +1,5 @@
+import os
+
 import psycopg
 from psycopg.types.json import Jsonb
 
@@ -5,10 +7,30 @@ DATABASE_NAME = "harmony_discovery_explorer"
 
 
 def get_connection():
-    return psycopg.connect(
-        dbname=DATABASE_NAME,
-        user="jacobdonaldrasbornik"
-    )
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        return psycopg.connect(database_url)
+    connection_options = {
+        "dbname": os.getenv("PGDATABASE", DATABASE_NAME),
+    }
+    for environment_name, option_name in (
+        ("PGUSER", "user"),
+        ("PGPASSWORD", "password"),
+        ("PGHOST", "host"),
+        ("PGPORT", "port"),
+        ("PGSSLMODE", "sslmode"),
+    ):
+        value = os.getenv(environment_name)
+        if value:
+            connection_options[option_name] = value
+    return psycopg.connect(**connection_options)
+
+
+def check_database_connection():
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1;")
+            return cursor.fetchone()[0] == 1
 
 
 def _user_from_row(row):

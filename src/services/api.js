@@ -1,4 +1,8 @@
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || "http://localhost:5001";
+const configuredApiBaseUrl = import.meta.env?.VITE_API_BASE_URL?.replace(/\/$/, "");
+if (import.meta.env?.PROD && !configuredApiBaseUrl) {
+  throw new Error("VITE_API_BASE_URL is required for production builds.");
+}
+const API_BASE_URL = configuredApiBaseUrl || "";
 
 export class ApiError extends Error {
   constructor(message, status = 0) {
@@ -69,13 +73,14 @@ export function getCurrentUser() {
 }
 
 export async function checkBackendHealth() {
-  const response = await fetch(`${API_BASE_URL}/api/health`);
-
-  if (!response.ok) {
-    throw new Error(`Backend returned status ${response.status}`);
+  try {
+    return await apiRequest("/api/health");
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 503) {
+      throw new ApiError("The server is running, but its database is unavailable.", 503);
+    }
+    throw error;
   }
-
-  return response.json();
 }
 
 export async function saveVoicing(voicing) {

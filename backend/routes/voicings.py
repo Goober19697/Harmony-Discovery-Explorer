@@ -1,4 +1,4 @@
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request
 
 from services.auth_guard import login_required
 from services.voicing_service import (
@@ -16,8 +16,8 @@ voicings_blueprint = Blueprint("voicings", __name__)
 def get_voicings():
     try:
         voicings = list_voicings(g.user_id)
-    except Exception as error:
-        print(f"Failed to load voicings: {error}")
+    except Exception:
+        current_app.logger.exception("Failed to load voicings")
         return jsonify({"error": "Unable to load voicings"}), 500
 
     return jsonify({"voicings": voicings}), 200
@@ -28,8 +28,8 @@ def get_voicings():
 def delete_voicing(voicing_id):
     try:
         deleted = remove_voicing(g.user_id, voicing_id)
-    except Exception as error:
-        print(f"Failed to delete voicing: {error}")
+    except Exception:
+        current_app.logger.exception("Failed to delete voicing")
         return jsonify({"error": "Unable to delete voicing"}), 500
 
     if not deleted:
@@ -45,8 +45,8 @@ def patch_voicing(voicing_id):
         updated_voicing = update_voicing(g.user_id, voicing_id, data)
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
-    except Exception as error:
-        print(f"Failed to update voicing: {error}")
+    except Exception:
+        current_app.logger.exception("Failed to update voicing")
         return jsonify({"error": "Unable to update voicing"}), 500
 
     if updated_voicing is None:
@@ -66,8 +66,8 @@ def save_voicing():
         saved_voicing = create_voicing(g.user_id, data)
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
-    except Exception as error:
-        print(f"Failed to save voicing: {error}")
+    except Exception:
+        current_app.logger.exception("Failed to save voicing")
         return jsonify({"error": "Unable to save voicing"}), 500
 
     return jsonify({
