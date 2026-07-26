@@ -1,8 +1,8 @@
-const configuredApiBaseUrl = import.meta.env?.VITE_API_BASE_URL?.replace(/\/$/, "");
+const configuredApiBaseUrl = import.meta.env?.VITE_API_BASE_URL?.replace(/\/+$/, "");
 if (import.meta.env?.PROD && !configuredApiBaseUrl) {
   throw new Error("VITE_API_BASE_URL is required for production builds.");
 }
-const API_BASE_URL = configuredApiBaseUrl || "";
+const API_BASE_URL = configuredApiBaseUrl || "/api";
 
 export class ApiError extends Error {
   constructor(message, status = 0) {
@@ -51,30 +51,30 @@ async function apiRequest(path, options = {}, handleSavedUnauthorized = false) {
 }
 
 export function registerUser(data) {
-  return apiRequest("/api/auth/register", {
+  return apiRequest("/auth/register", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
 export function loginUser(data) {
-  return apiRequest("/api/auth/login", {
+  return apiRequest("/auth/login", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
 export function logoutUser() {
-  return apiRequest("/api/auth/logout", { method: "POST" });
+  return apiRequest("/auth/logout", { method: "POST" });
 }
 
 export function getCurrentUser() {
-  return apiRequest("/api/auth/me");
+  return apiRequest("/auth/me");
 }
 
 export async function checkBackendHealth() {
   try {
-    return await apiRequest("/api/health");
+    return await apiRequest("/health");
   } catch (error) {
     if (error instanceof ApiError && error.status === 503) {
       throw new ApiError("The server is running, but its database is unavailable.", 503);
@@ -84,29 +84,29 @@ export async function checkBackendHealth() {
 }
 
 export async function saveVoicing(voicing) {
-  return apiRequest("/api/voicings", {
+  return apiRequest("/voicings", {
     method: "POST",
     body: JSON.stringify(voicing),
   }, true);
 }
 
 export async function getSavedVoicings() {
-  return apiRequest("/api/voicings", {}, true);
+  return apiRequest("/voicings", {}, true);
 }
 
 export async function saveProgression(progression) {
-  return apiRequest("/api/progressions", {
+  return apiRequest("/progressions", {
     method: "POST",
     body: JSON.stringify(progression),
   }, true);
 }
 
 export async function getSavedProgressions() {
-  return apiRequest("/api/progressions", {}, true);
+  return apiRequest("/progressions", {}, true);
 }
 
 export async function updateProgression(progressionId, payload) {
-  return apiRequest(`/api/progressions/${progressionId}`, {
+  return apiRequest(`/progressions/${progressionId}`, {
     method: "PATCH",
     body: JSON.stringify(payload),
   }, true);
@@ -117,7 +117,7 @@ export function updateSavedProgression(progressionId, progression) {
 }
 
 export async function updateVoicing(voicingId, payload) {
-  return apiRequest(`/api/voicings/${voicingId}`, {
+  return apiRequest(`/voicings/${voicingId}`, {
     method: "PATCH",
     body: JSON.stringify(payload),
   }, true);
@@ -128,9 +128,9 @@ async function deleteSavedRecord(path) {
 }
 
 export function deleteSavedVoicing(voicingId) {
-  return deleteSavedRecord(`/api/voicings/${voicingId}`);
+  return deleteSavedRecord(`/voicings/${voicingId}`);
 }
 
 export function deleteSavedProgression(progressionId) {
-  return deleteSavedRecord(`/api/progressions/${progressionId}`);
+  return deleteSavedRecord(`/progressions/${progressionId}`);
 }
