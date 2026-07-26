@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import * as Tone from "tone";
 import {
   inferUseFlats,
+  formatOrderedNotes,
   KEY_NAMES,
   keyUsesFlats,
   normalizeVoicingSpelling,
@@ -11,6 +12,7 @@ import {
 import {
   negativeHarmony,
   negativeHarmonyLabel,
+  negativeHarmonySourceDescription,
   negativeHarmonyUsesFlats,
 } from "./negativeHarmony.js";
 import {
@@ -23,6 +25,12 @@ import {
 } from "./candidatePool.js";
 import { analyzeVoicing, analyzeVoicingOptions, QUALITIES } from "./chordPatterns.js";
 import { checkBackendHealth, saveProgression, saveVoicing } from "./services/api";
+import SavedLibrary from "./components/SavedLibrary.jsx";
+import {
+  normalizeProgressionTitle,
+  savedProgressionMidis,
+  savedVoicingMidis,
+} from "./savedProgressionDisplay.js";
 
 // ---------- music theory helpers ----------
 
@@ -37,10 +45,7 @@ function toneName(midi) {
 }
 
 function midiToName(midi, flats) {
-  const names = flats ? FLAT_NAMES : SHARP_NAMES;
-  const pc = ((midi % 12) + 12) % 12;
-  const oct = Math.floor(midi / 12) - 1;
-  return names[pc] + oct;
+  return formatOrderedNotes([midi], { useFlats: flats });
 }
 
 // closest `count` octave-instances of pitch class pc to a given midi note
@@ -351,6 +356,8 @@ export default function HarmonyDiscoveryExplorer() {
   const [backendStatus, setBackendStatus] = useState("Checking backend...");
   const [progressionSaveStatus, setProgressionSaveStatus] = useState(null);
   const [progressionSaving, setProgressionSaving] = useState(false);
+  const [progressionTitle, setProgressionTitle] = useState("");
+  const [libraryRefreshKey, setLibraryRefreshKey] = useState(0);
   const synthRef = useRef(null);
   const committedText = history[history.length - 1].text;
 
@@ -369,11 +376,9 @@ export default function HarmonyDiscoveryExplorer() {
   connectToBackend();
 }, []);
 
-async function handleSaveVoicing(notes, chordName, emotion) {
+async function handleSaveVoicing(notes, chordName, emotion, useFlats = false) {
   try {
-    const formattedNotes = Array.isArray(notes)
-      ? notes.join(" ")
-      : notes;
+    const formattedNotes = formatOrderedNotes(notes, { useFlats });
 
     const result = await saveVoicing({
       notes: formattedNotes,
@@ -382,6 +387,7 @@ async function handleSaveVoicing(notes, chordName, emotion) {
     });
 
     console.log("Voicing saved:", result);
+    setLibraryRefreshKey(key => key + 1);
     alert("Voicing saved!");
   } catch (error) {
     console.error("Unable to save voicing:", error);
@@ -417,9 +423,10 @@ async function handleSaveProgression() {
 
   try {
     await saveProgression({
-      title: "Untitled Progression",
+      title: normalizeProgressionTitle(progressionTitle),
       progression,
     });
+    setLibraryRefreshKey(key => key + 1);
     setProgressionSaveStatus({ type: "success", message: "Progression saved!" });
   } catch (error) {
     console.error("Progression save failed:", error);
@@ -556,6 +563,29 @@ async function handleSaveProgression() {
     }
   }
 
+  async function playSavedVoicing(saved) {
+    const notes = savedVoicingMidis(saved);
+    if (!notes.length) throw new Error("This saved voicing does not contain playable notes.");
+    await playChord(notes, `saved-voicing-${saved.id}`);
+    await new Promise(resolve => setTimeout(resolve, CHORD_MS));
+  }
+
+  async function playSavedProgression(saved) {
+    const chords = savedProgressionMidis(saved);
+    if (!chords.length) throw new Error("This saved progression does not contain playable notes.");
+
+    stopTrail();
+    await unlockAudio();
+    const synth = await ensureSynth();
+    setAudioError(null);
+    for (const notes of chords) {
+      synth.releaseAll();
+      synth.triggerAttackRelease(notes.map(freq), (CHORD_MS / 1000) * 0.97);
+      await new Promise(resolve => setTimeout(resolve, CHORD_MS));
+    }
+    synth.releaseAll();
+  }
+
   const parsed = useMemo(() => parseVoicing(committedText), [committedText]);
   const currentNotes = parsed && parsed.midis.length ? parsed.midis : null;
   const negativeNotes = useMemo(() => negativeHarmony(currentNotes), [currentNotes]);
@@ -676,6 +706,61 @@ async function handleSaveProgression() {
   }
 
   const [inspectedIdx, setInspectedIdx] = useState(null); // which trail chip's notes are shown
+
+  function restoredNoteText(notes, midiNotes) {
+    return formatOrderedNotes(notes) || formatOrderedNotes(midiNotes);
+  }
+
+  function restoreSavedVoicing(voicing) {
+    const text = restoredNoteText(voicing.notes, voicing.midi_notes);
+    if (!parseVoicing(text).midis.length) {
+      setError("This saved voicing does not contain playable notes.");
+      return;
+    }
+    const entry = {
+      text,
+      label: voicing.chord_name || null,
+      ...(voicing.emotion ? { emotion: voicing.emotion } : {}),
+    };
+    setRawText(text);
+    setHistory(entries => [...entries.slice(0, -1), entry]);
+    setError(null);
+    setInspectedIdx(null);
+  }
+
+  function restoreSavedProgression(saved) {
+    const steps = Array.isArray(saved.progression) ? saved.progression : [];
+    const restored = steps
+      .map(step => {
+        const text = restoredNoteText(step.notes, step.midi_notes);
+        if (!parseVoicing(text).midis.length) return null;
+        return {
+          text,
+          label: step.chord_name || null,
+          ...(step.emotion ? { emotion: step.emotion } : {}),
+        };
+      })
+      .filter(Boolean);
+
+    if (!restored.length) {
+      setError("This saved progression does not contain playable chord data.");
+      return;
+    }
+
+    const hasCurrentProgression = history.some(entry => parseVoicing(entry.text).midis.length);
+    if (
+      hasCurrentProgression &&
+      !window.confirm("Replace the current progression with this saved progression?")
+    ) {
+      return;
+    }
+
+    setHistory(restored);
+    setRawText(restored[restored.length - 1].text);
+    setError(null);
+    setInspectedIdx(null);
+    setProgressionSaveStatus(null);
+  }
 
   function removeFromTrail(index) {
     if (history.length <= 1) return; // always keep at least the current voicing
@@ -1281,6 +1366,12 @@ async function handleSaveProgression() {
           cursor: wait;
           opacity: 0.65;
         }
+        .vl-progression-name {
+          display: flex; align-items: center; gap: 7px; margin-left: 6px;
+        }
+        .vl-progression-name .vl-input {
+          min-width: 170px; width: 190px; padding: 7px 9px; font-size: 11px;
+        }
         .vl-progression-status {
           flex-basis: 100%;
           margin: 2px 0 0 40px;
@@ -1289,6 +1380,130 @@ async function handleSaveProgression() {
         }
         .vl-progression-status.success { color: var(--sage); }
         .vl-progression-status.error { color: var(--rust); }
+        .vl-library-head, .vl-library-actions, .vl-library-card-head {
+          display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        }
+        .vl-library-title {
+          margin: 0; font-family: 'Fraunces', serif; font-size: 23px; font-weight: 600;
+        }
+        .vl-library-actions { justify-content: flex-end; flex-wrap: wrap; }
+        .vl-library-tabs {
+          display: inline-flex; margin-top: 18px; border: 1px solid var(--hair);
+          border-radius: 8px; overflow: hidden;
+        }
+        .vl-library-state {
+          margin-top: 14px; padding: 18px; color: var(--ink-dim); text-align: center;
+          border: 1px dashed var(--hair); border-radius: 8px; font-size: 13px;
+        }
+        .vl-library-grid {
+          display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px; margin-top: 14px;
+        }
+        .vl-library-card {
+          min-width: 0; padding: 14px; background: var(--bg);
+          border: 1px solid var(--hair); border-radius: 8px;
+        }
+        .vl-library-record { position: relative; }
+        .vl-library-record > .vl-library-card-head,
+        .vl-library-record > .vl-progression-card-heading {
+          padding-right: 34px;
+        }
+        .vl-library-record-delete {
+          position: absolute; top: 10px; right: 10px; z-index: 1;
+          display: grid; place-items: center; width: 26px; height: 26px; padding: 0;
+          border: 1px solid var(--hair); border-radius: 50%;
+          background: transparent; color: var(--ink-dim); cursor: pointer;
+          font-family: 'Inter', sans-serif; font-size: 16px; line-height: 1;
+          transition: color 0.15s, border-color 0.15s, background 0.15s;
+        }
+        .vl-library-record-delete:hover,
+        .vl-library-record-delete:focus-visible {
+          color: var(--rust); border-color: rgba(201,99,74,0.6);
+          background: rgba(201,99,74,0.12);
+        }
+        .vl-library-record-delete:focus-visible {
+          outline: 2px solid var(--brass); outline-offset: 1px;
+        }
+        .vl-library-card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .vl-library-card-actions .vl-row-apply:disabled {
+          cursor: wait; opacity: 0.6;
+        }
+        .vl-library-card-head { align-items: baseline; }
+        .vl-library-card-head strong { font-family: 'Fraunces', serif; font-size: 17px; }
+        .vl-library-card-head time {
+          flex: 0 0 auto; color: var(--ink-dim); font-family: 'JetBrains Mono', monospace;
+          font-size: 9px;
+        }
+        .vl-library-notes {
+          margin: 9px 0 5px; color: var(--ink); font-family: 'JetBrains Mono', monospace;
+          font-size: 11.5px; overflow-wrap: anywhere;
+        }
+        .vl-library-meta { margin: 5px 0 10px; color: var(--ink-dim); font-size: 11px; }
+        .vl-library-preview {
+          display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 8px 0 12px;
+          padding-left: 22px; color: var(--ink-dim); font-size: 11.5px;
+        }
+        .vl-progression-card { grid-column: 1 / -1; }
+        .vl-progression-card-heading {
+          position: relative; display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          column-gap: 10px; margin-bottom: 12px;
+        }
+        .vl-progression-card-heading strong {
+          display: block; grid-column: 1; font-family: 'Fraunces', serif; font-size: 18px;
+        }
+        .vl-progression-editable-title {
+          width: fit-content; max-width: calc(100% - 28px); cursor: text;
+          overflow-wrap: anywhere;
+        }
+        .vl-progression-editable-title:hover { color: var(--brass); }
+        .vl-progression-rename {
+          grid-column: 1; width: min(360px, 100%); min-width: 0; font-size: 14px;
+        }
+        .vl-progression-rename-hint {
+          grid-column: 1; margin-top: 2px; color: var(--ink-dim); font-size: 9px;
+        }
+        .vl-progression-card-heading .vl-library-meta {
+          grid-column: 1; margin-bottom: 2px;
+        }
+        .vl-progression-card-heading time {
+          grid-column: 2; grid-row: 1; align-self: baseline; white-space: nowrap;
+          color: var(--ink-dim); font-family: 'JetBrains Mono', monospace; font-size: 9px;
+        }
+        .vl-saved-progression-trail {
+          display: flex; flex-direction: row; align-items: center;
+          gap: 12px; margin: 0 0 12px; padding: 2px 0 8px;
+          overflow-x: auto; flex-wrap: nowrap;
+          -webkit-overflow-scrolling: touch;
+        }
+        .vl-saved-progression-node {
+          position: relative; flex: 0 0 auto; min-width: max-content; padding: 12px 34px 10px 12px;
+          background: var(--panel); border: 1px solid var(--hair); border-radius: 7px;
+        }
+        .vl-saved-progression-remove {
+          position: absolute; top: 4px; right: 5px;
+          display: grid; place-items: center; width: 25px; height: 25px; padding: 0;
+          border: 0; border-radius: 50%; background: transparent; color: var(--ink-dim);
+          cursor: pointer; font-family: 'Inter', sans-serif; font-size: 17px; line-height: 1;
+        }
+        .vl-saved-progression-remove:hover {
+          color: var(--rust); background: rgba(201,99,74,0.12);
+        }
+        .vl-saved-progression-remove:focus-visible {
+          outline: 2px solid var(--brass); outline-offset: 1px;
+        }
+        .vl-saved-progression-arrow {
+          flex: 0 0 auto; color: var(--brass);
+          font-family: 'JetBrains Mono', monospace; font-size: 16px;
+        }
+        .vl-progression-step-name {
+          color: var(--ink); font-family: 'Fraunces', serif;
+          font-size: 15px; font-weight: 600; overflow-wrap: anywhere;
+        }
+        .vl-progression-step-notes {
+          margin-top: 3px; color: var(--ink-dim); font-family: 'JetBrains Mono', monospace;
+          font-size: 11px; line-height: 1.5; overflow-wrap: anywhere;
+        }
         .vl-legend {
           display: flex; gap: 16px; margin-top: 18px; font-size: 11.5px; color: var(--ink-dim);
           font-family: 'JetBrains Mono', monospace;
@@ -1347,6 +1562,15 @@ async function handleSaveProgression() {
             flex-wrap: wrap;
             gap: 8px;
           }
+          .vl-library-head { align-items: flex-start; flex-direction: column; }
+          .vl-library-actions { width: 100%; justify-content: flex-start; }
+          .vl-library-tabs { display: flex; width: 100%; }
+          .vl-library-tabs .vl-mode-btn { flex: 1; white-space: normal; }
+          .vl-library-grid { grid-template-columns: 1fr; }
+          .vl-progression-name {
+            width: 100%; margin-left: 0; align-items: stretch; flex-direction: column;
+          }
+          .vl-progression-name .vl-input { width: 100%; }
           .vl-legend { flex-wrap: wrap; gap: 8px 16px; }
         }
         @media (max-width: 360px) {
@@ -1363,6 +1587,14 @@ async function handleSaveProgression() {
           interpretations for every harmony, and—if inspiration strikes—build a
           progression trail.
         </p>
+
+        <SavedLibrary
+          onRestoreVoicing={restoreSavedVoicing}
+          onRestoreProgression={restoreSavedProgression}
+          onPlayVoicing={playSavedVoicing}
+          onPlayProgression={playSavedProgression}
+          refreshKey={libraryRefreshKey}
+        />
 
         <div className="vl-panel vl-form">
           <div className="vl-field" style={{ flex: 1 }}>
@@ -1475,6 +1707,15 @@ async function handleSaveProgression() {
             >
               clear trail
             </button>
+            <label className="vl-progression-name">
+              <span className="vl-label">Progression Name</span>
+              <input
+                className="vl-input"
+                value={progressionTitle}
+                onChange={event => setProgressionTitle(event.target.value)}
+                placeholder="Untitled Progression"
+              />
+            </label>
             <button
               type="button"
               className="vl-save-progression"
@@ -1558,7 +1799,8 @@ async function handleSaveProgression() {
                         handleSaveVoicing(
                           currentNotes,
                           currentLabel || "Custom voicing",
-                          "Current Voicing"
+                          "Current Voicing",
+                          key.flats
                         )
                       }
                     >
@@ -1613,7 +1855,12 @@ async function handleSaveProgression() {
                           handleSaveVoicing(
                             negativeNotes,
                             negativeHarmonyLabel(negativeNotes),
-                            "Negative Harmony"
+                            negativeHarmonySourceDescription(
+                              currentLabel,
+                              currentNotes,
+                              key.flats
+                            ),
+                            negativeUsesFlats
                           )
                         }
                       >
@@ -1685,7 +1932,8 @@ async function handleSaveProgression() {
                               handleSaveVoicing(
                                 selectedNotes,
                                 r.name,
-                                activeGroup?.label || "Generated Voicing"
+                                activeGroup?.label || "Generated Voicing",
+                                r.flats
                               )
                             }
                           >

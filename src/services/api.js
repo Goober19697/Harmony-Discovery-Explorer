@@ -28,6 +28,17 @@ export async function saveVoicing(voicing) {
   return data;
 }
 
+export async function getSavedVoicings() {
+  const response = await fetch(`${API_BASE_URL}/api/voicings`);
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || `Backend returned status ${response.status}`);
+  }
+
+  return data;
+}
+
 export async function saveProgression(progression) {
   const response = await fetch(`${API_BASE_URL}/api/progressions`, {
     method: "POST",
@@ -44,4 +55,53 @@ export async function saveProgression(progression) {
   }
 
   return data;
+}
+
+export async function getSavedProgressions() {
+  const response = await fetch(`${API_BASE_URL}/api/progressions`);
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || `Backend returned status ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function updateProgression(progressionId, payload) {
+  const response = await fetch(`${API_BASE_URL}/api/progressions/${progressionId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || `Backend returned status ${response.status}`);
+  }
+
+  return data;
+}
+
+export function updateSavedProgression(progressionId, progression) {
+  return updateProgression(progressionId, { progression });
+}
+
+async function deleteSavedRecord(path) {
+  const response = await fetch(`${API_BASE_URL}${path}`, { method: "DELETE" });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || `Backend returned status ${response.status}`);
+  }
+  return data;
+}
+
+export function deleteSavedVoicing(voicingId) {
+  return deleteSavedRecord(`/api/voicings/${voicingId}`);
+}
+
+export function deleteSavedProgression(progressionId) {
+  return deleteSavedRecord(`/api/progressions/${progressionId}`);
 }

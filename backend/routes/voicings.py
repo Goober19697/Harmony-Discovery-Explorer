@@ -1,8 +1,32 @@
 from flask import Blueprint, jsonify, request
 
-from services.voicing_service import create_voicing
+from services.voicing_service import create_voicing, list_voicings, remove_voicing
 
 voicings_blueprint = Blueprint("voicings", __name__)
+
+
+@voicings_blueprint.route("/api/voicings", methods=["GET"])
+def get_voicings():
+    try:
+        voicings = list_voicings()
+    except Exception as error:
+        print(f"Failed to load voicings: {error}")
+        return jsonify({"error": "Unable to load voicings"}), 500
+
+    return jsonify({"voicings": voicings}), 200
+
+
+@voicings_blueprint.route("/api/voicings/<int:voicing_id>", methods=["DELETE"])
+def delete_voicing(voicing_id):
+    try:
+        deleted = remove_voicing(voicing_id)
+    except Exception as error:
+        print(f"Failed to delete voicing: {error}")
+        return jsonify({"error": "Unable to delete voicing"}), 500
+
+    if not deleted:
+        return jsonify({"error": "Voicing not found"}), 404
+    return jsonify({"message": "Voicing deleted"}), 200
 
 
 @voicings_blueprint.route("/api/voicings", methods=["POST"])

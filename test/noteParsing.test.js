@@ -2,13 +2,28 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  formatOrderedNotes,
   inferUseFlats,
   KEY_NAMES,
   keyUsesFlats,
   normalizeVoicingSpelling,
   parseVoicing,
+  noteValueToName,
   spellMidiForChord,
 } from "../src/noteParsing.js";
+
+test("canonical note formatting converts MIDI and preserves ordered exact notes", () => {
+  assert.equal(noteValueToName(58, true), "B♭3");
+  assert.equal(noteValueToName(60, true), "C4");
+  assert.equal(formatOrderedNotes([58, 62, 65, 69, 72], { useFlats: true }), "B♭3 D4 F4 A4 C5");
+  assert.equal(formatOrderedNotes(["A3", "C4", "E4", "G4"]), "A3 C4 E4 G4");
+});
+
+test("canonical note formatting safely ignores unsupported mixed values", () => {
+  assert.equal(formatOrderedNotes([58, null, "not-a-note", "C4", {}, 62], { useFlats: true }), "B♭3 C4 D4");
+  assert.equal(formatOrderedNotes("58 62 65 69 72", { useFlats: true }), "B♭3 D4 F4 A4 C5");
+  assert.equal(formatOrderedNotes("58 62 65 69 72"), "B♭3 D4 F4 A4 C5");
+});
 
 function analyze(text) {
   return { currentVoicing: parseVoicing(text).midis };

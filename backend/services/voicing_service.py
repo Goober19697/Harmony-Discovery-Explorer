@@ -1,4 +1,4 @@
-from database.db import insert_voicing
+from database.db import delete_voicing, get_all_voicings, insert_voicing
 
 
 def create_voicing(data):
@@ -14,3 +14,11 @@ def create_voicing(data):
         chord_name=chord_name,
         emotion=emotion,
     )
+
+
+def list_voicings():
+    return get_all_voicings()
+
+
+def remove_voicing(voicing_id):
+    return delete_voicing(voicing_id)

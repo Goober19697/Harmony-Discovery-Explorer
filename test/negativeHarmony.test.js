@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   negativeHarmony,
   negativeHarmonyLabel,
+  negativeHarmonySourceDescription,
   negativeHarmonyUsesFlats,
 } from "../src/negativeHarmony.js";
 import { chordLabel } from "../src/chordPatterns.js";
@@ -37,4 +38,15 @@ test("an unrecognized shadow still displays intervals from its lowest note", () 
 
 test("an empty voicing has no negative harmony", () => {
   assert.deepEqual(negativeHarmony([]), []);
+});
+
+test("negative harmony save context identifies its source chord or source notes", () => {
+  assert.equal(
+    negativeHarmonySourceDescription("Fmaj9", [53, 57, 60, 64, 67], true),
+    "Negative harmony of Fmaj9"
+  );
+  assert.equal(
+    negativeHarmonySourceDescription("Custom voicing", [53, 57, 60, 64, 67], true),
+    "Negative harmony of F3 A3 C4 E4 G4"
+  );
 });

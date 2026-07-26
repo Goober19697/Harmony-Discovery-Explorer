@@ -8,6 +8,40 @@ export function keyUsesFlats(rootPc) {
   return [1, 3, 5, 6, 8, 10].includes(rootPc);
 }
 
+export function noteValueToName(note, useFlats = null) {
+  if (typeof note === "string" && /^[A-Ga-g](?:#{1,2}|♯{1,2}|b{1,2}|♭{1,2}|𝄪|𝄫)?-?\d+$/.test(note.trim())) {
+    return note.trim();
+  }
+
+  const numeric = typeof note === "number"
+    ? note
+    : typeof note === "string" && /^-?\d+$/.test(note.trim())
+      ? Number(note)
+      : null;
+  if (!Number.isInteger(numeric)) return null;
+
+  const names = useFlats === null
+    ? KEY_NAMES
+    : useFlats
+      ? ["C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"]
+      : ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
+  const pitchClass = ((numeric % 12) + 12) % 12;
+  return names[pitchClass] + (Math.floor(numeric / 12) - 1);
+}
+
+export function formatOrderedNotes(notes, { useFlats = null } = {}) {
+  const values = Array.isArray(notes)
+    ? notes
+    : typeof notes === "string"
+      ? notes.split(/[\s,]+/).filter(Boolean)
+      : [notes];
+
+  return values
+    .map(note => noteValueToName(note, useFlats))
+    .filter(Boolean)
+    .join(" ");
+}
+
 export function spellMidiForChord(midi, rootPc, suffix = "") {
   const letters = ["C", "D", "E", "F", "G", "A", "B"];
   const naturalPcs = [0, 2, 4, 5, 7, 9, 11];

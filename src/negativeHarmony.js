@@ -1,4 +1,5 @@
 import { analyzeVoicingOptions } from "./chordPatterns.js";
+import { formatOrderedNotes } from "./noteParsing.js";
 
 const CONVENTIONAL_ROOT_NAMES = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"];
 const FLAT_ROOTS = new Set([3, 8, 10]);
@@ -38,4 +39,14 @@ export function negativeHarmonyLabel(midis) {
 export function negativeHarmonyUsesFlats(midis) {
   const recognized = negativeHarmonyAnalysis(midis);
   return recognized ? FLAT_ROOTS.has(recognized.rootPc) : false;
+}
+
+export function negativeHarmonySourceDescription(sourceLabel, sourceNotes, useFlats = false) {
+  const reliableLabel = typeof sourceLabel === "string" &&
+    sourceLabel.trim() &&
+    sourceLabel.trim().toLowerCase() !== "custom voicing";
+  const source = reliableLabel
+    ? sourceLabel.trim()
+    : formatOrderedNotes(sourceNotes, { useFlats }) || "unknown voicing";
+  return `Negative harmony of ${source}`;
 }
