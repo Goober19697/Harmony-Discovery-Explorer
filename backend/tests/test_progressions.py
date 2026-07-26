@@ -41,7 +41,9 @@ class ProgressionServiceTests(unittest.TestCase):
             {"chord_name": "G", "notes": "G3 B3 D4"},
         ]
         update_progression(7, {"progression": steps})
-        update_record.assert_called_once_with(7, title=None, progression=steps)
+        update_record.assert_called_once_with(
+            7, title=None, progression=steps, favorite=None
+        )
 
     @patch("services.progression_service.update_progression_record")
     def test_title_update_preserves_progression_and_normalizes_title(self, update_record):
@@ -50,6 +52,7 @@ class ProgressionServiceTests(unittest.TestCase):
             7,
             title="Midnight Resolve",
             progression=None,
+            favorite=None,
         )
 
         update_progression(7, {"title": "   "})
@@ -61,6 +64,16 @@ class ProgressionServiceTests(unittest.TestCase):
     def test_update_progression_rejects_an_empty_array(self):
         with self.assertRaisesRegex(ValueError, "non-empty list"):
             update_progression(7, {"progression": []})
+
+    @patch("services.progression_service.update_progression_record")
+    def test_favorite_update_preserves_title_and_steps(self, update_record):
+        update_progression(7, {"favorite": True})
+        update_record.assert_called_once_with(
+            7,
+            title=None,
+            progression=None,
+            favorite=True,
+        )
 
 
 class ProgressionRouteTests(unittest.TestCase):
@@ -87,12 +100,14 @@ class ProgressionRouteTests(unittest.TestCase):
                 "title": "Newest",
                 "progression": [{"chord_name": "Am", "notes": "A2 C3 E3"}],
                 "created_at": "2026-07-25T13:00:00+00:00",
+                "favorite": True,
             },
             {
                 "id": 1,
                 "title": "Older",
                 "progression": [{"chord_name": "C", "notes": "C3 E3 G3"}],
                 "created_at": "2026-07-25T12:00:00+00:00",
+                "favorite": False,
             },
         ]
 
@@ -103,6 +118,7 @@ class ProgressionRouteTests(unittest.TestCase):
             [item["id"] for item in response.get_json()["progressions"]],
             [2, 1],
         )
+        self.assertEqual(response.get_json()["progressions"][0]["favorite"], True)
 
     @patch("routes.progressions.update_progression")
     def test_patch_returns_updated_progression(self, update_progression_mock):

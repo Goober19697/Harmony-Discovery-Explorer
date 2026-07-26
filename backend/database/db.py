@@ -15,7 +15,7 @@ def insert_voicing(notes, chord_name=None, emotion=None):
     sql = """
         INSERT INTO voicings (notes, chord_name, emotion)
         VALUES (%s, %s, %s)
-        RETURNING id, notes, chord_name, emotion, created_at;
+        RETURNING id, notes, chord_name, emotion, created_at, favorite;
     """
 
     with get_connection() as connection:
@@ -29,6 +29,7 @@ def insert_voicing(notes, chord_name=None, emotion=None):
         "chord_name": row[2],
         "emotion": row[3],
         "created_at": row[4].isoformat(),
+        "favorite": row[5],
     }
 
 
@@ -36,7 +37,7 @@ def insert_progression(title, progression):
     sql = """
         INSERT INTO progressions (title, progression)
         VALUES (%s, %s)
-        RETURNING id, title, progression, created_at;
+        RETURNING id, title, progression, created_at, favorite;
     """
 
     with get_connection() as connection:
@@ -49,12 +50,13 @@ def insert_progression(title, progression):
         "title": row[1],
         "progression": row[2],
         "created_at": row[3].isoformat(),
+        "favorite": row[4],
     }
 
 
 def get_all_voicings():
     sql = """
-        SELECT id, notes, chord_name, emotion, created_at
+        SELECT id, notes, chord_name, emotion, created_at, favorite
         FROM voicings
         ORDER BY created_at DESC, id DESC;
     """
@@ -71,6 +73,7 @@ def get_all_voicings():
             "chord_name": row[2],
             "emotion": row[3],
             "created_at": row[4].isoformat(),
+            "favorite": row[5],
         }
         for row in rows
     ]
@@ -78,7 +81,7 @@ def get_all_voicings():
 
 def get_all_progressions():
     sql = """
-        SELECT id, title, progression, created_at
+        SELECT id, title, progression, created_at, favorite
         FROM progressions
         ORDER BY created_at DESC, id DESC;
     """
@@ -94,12 +97,13 @@ def get_all_progressions():
             "title": row[1],
             "progression": row[2],
             "created_at": row[3].isoformat(),
+            "favorite": row[4],
         }
         for row in rows
     ]
 
 
-def update_progression_record(progression_id, title=None, progression=None):
+def update_progression_record(progression_id, title=None, progression=None, favorite=None):
     assignments = []
     values = []
     if title is not None:
@@ -108,12 +112,15 @@ def update_progression_record(progression_id, title=None, progression=None):
     if progression is not None:
         assignments.append("progression = %s")
         values.append(Jsonb(progression))
+    if favorite is not None:
+        assignments.append("favorite = %s")
+        values.append(favorite)
 
     sql = f"""
         UPDATE progressions
         SET {", ".join(assignments)}
         WHERE id = %s
-        RETURNING id, title, progression, created_at;
+        RETURNING id, title, progression, created_at, favorite;
     """
     values.append(progression_id)
 
@@ -130,6 +137,31 @@ def update_progression_record(progression_id, title=None, progression=None):
         "title": row[1],
         "progression": row[2],
         "created_at": row[3].isoformat(),
+        "favorite": row[4],
+    }
+
+
+def update_voicing_record(voicing_id, favorite):
+    sql = """
+        UPDATE voicings
+        SET favorite = %s
+        WHERE id = %s
+        RETURNING id, notes, chord_name, emotion, created_at, favorite;
+    """
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(sql, (favorite, voicing_id))
+            row = cursor.fetchone()
+
+    if row is None:
+        return None
+    return {
+        "id": row[0],
+        "notes": row[1],
+        "chord_name": row[2],
+        "emotion": row[3],
+        "created_at": row[4].isoformat(),
+        "favorite": row[5],
     }
 
 

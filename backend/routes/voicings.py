@@ -1,6 +1,11 @@
 from flask import Blueprint, jsonify, request
 
-from services.voicing_service import create_voicing, list_voicings, remove_voicing
+from services.voicing_service import (
+    create_voicing,
+    list_voicings,
+    remove_voicing,
+    update_voicing,
+)
 
 voicings_blueprint = Blueprint("voicings", __name__)
 
@@ -27,6 +32,25 @@ def delete_voicing(voicing_id):
     if not deleted:
         return jsonify({"error": "Voicing not found"}), 404
     return jsonify({"message": "Voicing deleted"}), 200
+
+
+@voicings_blueprint.route("/api/voicings/<int:voicing_id>", methods=["PATCH"])
+def patch_voicing(voicing_id):
+    data = request.get_json(silent=True)
+    try:
+        updated_voicing = update_voicing(voicing_id, data)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+    except Exception as error:
+        print(f"Failed to update voicing: {error}")
+        return jsonify({"error": "Unable to update voicing"}), 500
+
+    if updated_voicing is None:
+        return jsonify({"error": "Voicing not found"}), 404
+    return jsonify({
+        "message": "Voicing updated",
+        "voicing": updated_voicing,
+    }), 200
 
 
 @voicings_blueprint.route("/api/voicings", methods=["POST"])

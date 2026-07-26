@@ -6,6 +6,7 @@ import {
   getSavedVoicings,
   updateProgression,
   updateSavedProgression,
+  updateVoicing,
 } from "../services/api.js";
 import { formatOrderedNotes } from "../noteParsing.js";
 import {
@@ -13,6 +14,11 @@ import {
   savedProgressionDisplaySteps,
   normalizeProgressionTitle,
 } from "../savedProgressionDisplay.js";
+import {
+  visibleProgressions,
+  visibleVoicings,
+  voicingCategories,
+} from "../savedLibraryFilters.js";
 
 function savedDate(value) {
   if (!value) return null;
@@ -40,6 +46,11 @@ export default function SavedLibrary({
   const [titleDraft, setTitleDraft] = useState("");
   const [playingVoicingId, setPlayingVoicingId] = useState(null);
   const [playingProgressionId, setPlayingProgressionId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState("newest");
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [lengthFilter, setLengthFilter] = useState("all");
   const renameInputRef = useRef(null);
   const renameInFlightRef = useRef(false);
   const skipRenameBlurRef = useRef(false);
@@ -147,6 +158,26 @@ export default function SavedLibrary({
     }
   }
 
+  async function toggleVoicingFavorite(saved) {
+    setUpdateError(null);
+    try {
+      const result = await updateVoicing(saved.id, { favorite: !saved.favorite });
+      setVoicings(items => replaceSavedProgression(items, result.voicing));
+    } catch (error) {
+      setUpdateError(error.message || "The favorite could not be updated.");
+    }
+  }
+
+  async function toggleProgressionFavorite(saved) {
+    setUpdateError(null);
+    try {
+      const result = await updateProgression(saved.id, { favorite: !saved.favorite });
+      setProgressions(items => replaceSavedProgression(items, result.progression));
+    } catch (error) {
+      setUpdateError(error.message || "The favorite could not be updated.");
+    }
+  }
+
   async function removeProgressionStep(saved, stepIndex) {
     const steps = Array.isArray(saved.progression) ? saved.progression : [];
     if (steps.length <= 1) {
@@ -167,7 +198,21 @@ export default function SavedLibrary({
     }
   }
 
-  const items = activeTab === "voicings" ? voicings : progressions;
+  const filteredVoicings = visibleVoicings(voicings, {
+    query: searchQuery,
+    sort: sortOrder,
+    favoritesOnly,
+    category: categoryFilter,
+  });
+  const filteredProgressions = visibleProgressions(progressions, {
+    query: searchQuery,
+    sort: sortOrder,
+    favoritesOnly,
+    length: lengthFilter,
+  });
+  const items = activeTab === "voicings" ? filteredVoicings : filteredProgressions;
+  const hasActiveFilters = Boolean(searchQuery.trim()) || favoritesOnly ||
+    (activeTab === "voicings" ? categoryFilter !== "all" : lengthFilter !== "all");
 
   return (
     <section className="vl-panel vl-library">
@@ -216,21 +261,95 @@ export default function SavedLibrary({
             </button>
           </div>
 
+          <div className="vl-library-controls">
+            <div className="vl-library-search">
+              <input
+                className="vl-input"
+                type="search"
+                value={searchQuery}
+                onChange={event => setSearchQuery(event.target.value)}
+                placeholder="Search saved library…"
+                aria-label="Search saved library"
+              />
+              {searchQuery && (
+                <button type="button" onClick={() => setSearchQuery("")} aria-label="Clear search">
+                  ×
+                </button>
+              )}
+            </div>
+            <select
+              className="vl-select"
+              value={sortOrder}
+              onChange={event => setSortOrder(event.target.value)}
+              aria-label="Sort saved library"
+            >
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="az">Title A–Z</option>
+              <option value="za">Title Z–A</option>
+            </select>
+            <select
+              className="vl-select"
+              value={favoritesOnly ? "favorites" : "all"}
+              onChange={event => setFavoritesOnly(event.target.value === "favorites")}
+              aria-label="Filter favorites"
+            >
+              <option value="all">All</option>
+              <option value="favorites">Favorites</option>
+            </select>
+            {activeTab === "voicings" ? (
+              <select
+                className="vl-select"
+                value={categoryFilter}
+                onChange={event => setCategoryFilter(event.target.value)}
+                aria-label="Filter voicing category"
+              >
+                <option value="all">All categories</option>
+                {voicingCategories(voicings).map(category => (
+                  <option value={category} key={category}>{category}</option>
+                ))}
+              </select>
+            ) : (
+              <select
+                className="vl-select"
+                value={lengthFilter}
+                onChange={event => setLengthFilter(event.target.value)}
+                aria-label="Filter progression length"
+              >
+                <option value="all">All lengths</option>
+                <option value="1-2">1–2 chords</option>
+                <option value="3-4">3–4 chords</option>
+                <option value="5+">5+ chords</option>
+              </select>
+            )}
+          </div>
+
           {loadError && <div className="vl-error" role="alert">Could not load saved items: {loadError}</div>}
           {updateError && <div className="vl-error" role="alert">{updateError}</div>}
           {loading && <div className="vl-library-state" role="status">Loading saved harmonies…</div>}
           {!loading && !loadError && items.length === 0 && (
             <div className="vl-library-state">
-              {activeTab === "voicings"
+              {hasActiveFilters
+                ? "No saved items match your search or filters."
+                : activeTab === "voicings"
                 ? "No saved voicings yet. Save one you love and it will appear here."
                 : "No saved progressions yet. Build and save a trail to see it here."}
             </div>
           )}
 
-          {!loading && !loadError && activeTab === "voicings" && voicings.length > 0 && (
+          {!loading && !loadError && activeTab === "voicings" && filteredVoicings.length > 0 && (
             <div className="vl-library-grid">
-              {voicings.map(voicing => (
+              {filteredVoicings.map(voicing => (
                 <article className="vl-library-card vl-library-record" key={voicing.id}>
+                  <button
+                    className={"vl-library-favorite" + (voicing.favorite ? " active" : "")}
+                    type="button"
+                    onClick={() => toggleVoicingFavorite(voicing)}
+                    aria-label={`${voicing.favorite ? "Remove" : "Add"} ${voicing.chord_name || "custom voicing"} ${voicing.favorite ? "from" : "to"} favorites`}
+                    title={voicing.favorite ? "Remove from favorites" : "Add to favorites"}
+                  >
+                    {voicing.favorite ? "★" : "☆"}
+                  </button>
                   <button
                     className="vl-library-record-delete"
                     type="button"
@@ -267,13 +386,22 @@ export default function SavedLibrary({
             </div>
           )}
 
-          {!loading && !loadError && activeTab === "progressions" && progressions.length > 0 && (
+          {!loading && !loadError && activeTab === "progressions" && filteredProgressions.length > 0 && (
             <div className="vl-library-grid">
-              {progressions.map(saved => {
+              {filteredProgressions.map(saved => {
                 const steps = Array.isArray(saved.progression) ? saved.progression : [];
                 const displaySteps = savedProgressionDisplaySteps(steps);
                 return (
                   <article className="vl-library-card vl-library-record vl-progression-card" key={saved.id}>
+                    <button
+                      className={"vl-library-favorite" + (saved.favorite ? " active" : "")}
+                      type="button"
+                      onClick={() => toggleProgressionFavorite(saved)}
+                      aria-label={`${saved.favorite ? "Remove" : "Add"} ${saved.title || "Untitled Progression"} ${saved.favorite ? "from" : "to"} favorites`}
+                      title={saved.favorite ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      {saved.favorite ? "★" : "☆"}
+                    </button>
                     <button
                       className="vl-library-record-delete"
                       type="button"

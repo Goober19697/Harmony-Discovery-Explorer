@@ -10,6 +10,7 @@ import {
   saveVoicing,
   updateProgression,
   updateSavedProgression,
+  updateVoicing,
 } from "../src/services/api.js";
 import { formatOrderedNotes } from "../src/noteParsing.js";
 import { negativeHarmonySourceDescription } from "../src/negativeHarmony.js";
@@ -168,6 +169,22 @@ test("saved record delete helpers target only their complete record endpoints", 
       ["http://127.0.0.1:5000/api/voicings/3", "DELETE"],
       ["http://127.0.0.1:5000/api/progressions/8", "DELETE"],
     ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("updateVoicing patches favorite state", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url, "http://127.0.0.1:5000/api/voicings/4");
+    assert.equal(options.method, "PATCH");
+    assert.deepEqual(JSON.parse(options.body), { favorite: true });
+    return { ok: true, json: async () => ({ voicing: { id: 4, favorite: true } }) };
+  };
+  try {
+    const result = await updateVoicing(4, { favorite: true });
+    assert.equal(result.voicing.favorite, true);
   } finally {
     globalThis.fetch = originalFetch;
   }

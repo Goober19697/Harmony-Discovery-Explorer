@@ -89,6 +89,21 @@ export function updateSavedProgression(progressionId, progression) {
   return updateProgression(progressionId, { progression });
 }
 
+export async function updateVoicing(voicingId, payload) {
+  const response = await fetch(`${API_BASE_URL}/api/voicings/${voicingId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || `Backend returned status ${response.status}`);
+  }
+  return data;
+}
+
 async function deleteSavedRecord(path) {
   const response = await fetch(`${API_BASE_URL}${path}`, { method: "DELETE" });
   const data = await response.json();

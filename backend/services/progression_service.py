@@ -37,8 +37,9 @@ def update_progression(progression_id, data):
 
     has_title = "title" in data
     has_progression = "progression" in data
-    if not has_title and not has_progression:
-        raise ValueError("title or progression is required")
+    has_favorite = "favorite" in data
+    if not has_title and not has_progression and not has_favorite:
+        raise ValueError("title, progression, or favorite is required")
 
     title = None
     if has_title:
@@ -64,10 +65,17 @@ def update_progression(progression_id, data):
             ):
                 raise ValueError(f"progression step {index + 1} requires notes")
 
+    favorite = None
+    if has_favorite:
+        if not isinstance(data["favorite"], bool):
+            raise ValueError("favorite must be a boolean")
+        favorite = data["favorite"]
+
     return update_progression_record(
         progression_id,
         title=title,
         progression=progression,
+        favorite=favorite,
     )
 
 

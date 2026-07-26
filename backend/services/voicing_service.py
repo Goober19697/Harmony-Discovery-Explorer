@@ -1,4 +1,9 @@
-from database.db import delete_voicing, get_all_voicings, insert_voicing
+from database.db import (
+    delete_voicing,
+    get_all_voicings,
+    insert_voicing,
+    update_voicing_record,
+)
 
 
 def create_voicing(data):
@@ -22,3 +27,13 @@ def list_voicings():
 
 def remove_voicing(voicing_id):
     return delete_voicing(voicing_id)
+
+
+def update_voicing(voicing_id, data):
+    if not isinstance(data, dict):
+        raise ValueError("request body must be a JSON object")
+    if "favorite" not in data:
+        raise ValueError("favorite is required")
+    if not isinstance(data["favorite"], bool):
+        raise ValueError("favorite must be a boolean")
+    return update_voicing_record(voicing_id, data["favorite"])

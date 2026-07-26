@@ -1391,6 +1391,21 @@ async function handleSaveProgression() {
           display: inline-flex; margin-top: 18px; border: 1px solid var(--hair);
           border-radius: 8px; overflow: hidden;
         }
+        .vl-library-controls {
+          display: flex; align-items: center; flex-wrap: wrap;
+          gap: 8px; margin-top: 12px;
+        }
+        .vl-library-controls .vl-select { min-width: 120px; font-size: 11px; padding: 8px; }
+        .vl-library-search { position: relative; flex: 1 1 210px; }
+        .vl-library-search .vl-input {
+          width: 100%; min-width: 0; padding-right: 30px; font-size: 12px;
+        }
+        .vl-library-search button {
+          position: absolute; top: 50%; right: 5px; transform: translateY(-50%);
+          width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%;
+          background: transparent; color: var(--ink-dim); cursor: pointer; font-size: 16px;
+        }
+        .vl-library-search button:hover { color: var(--ink); background: var(--hair); }
         .vl-library-state {
           margin-top: 14px; padding: 18px; color: var(--ink-dim); text-align: center;
           border: 1px dashed var(--hair); border-radius: 8px; font-size: 13px;
@@ -1406,7 +1421,7 @@ async function handleSaveProgression() {
         .vl-library-record { position: relative; }
         .vl-library-record > .vl-library-card-head,
         .vl-library-record > .vl-progression-card-heading {
-          padding-right: 34px;
+          padding-right: 66px;
         }
         .vl-library-record-delete {
           position: absolute; top: 10px; right: 10px; z-index: 1;
@@ -1422,6 +1437,19 @@ async function handleSaveProgression() {
           background: rgba(201,99,74,0.12);
         }
         .vl-library-record-delete:focus-visible {
+          outline: 2px solid var(--brass); outline-offset: 1px;
+        }
+        .vl-library-favorite {
+          position: absolute; top: 10px; right: 42px; z-index: 1;
+          display: grid; place-items: center; width: 26px; height: 26px; padding: 0;
+          border: 1px solid transparent; border-radius: 50%;
+          background: transparent; color: var(--ink-dim); cursor: pointer;
+          font-size: 16px; line-height: 1;
+        }
+        .vl-library-favorite:hover, .vl-library-favorite.active {
+          color: var(--brass); background: rgba(201,138,58,0.10);
+        }
+        .vl-library-favorite:focus-visible {
           outline: 2px solid var(--brass); outline-offset: 1px;
         }
         .vl-library-card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -1567,6 +1595,9 @@ async function handleSaveProgression() {
           .vl-library-tabs { display: flex; width: 100%; }
           .vl-library-tabs .vl-mode-btn { flex: 1; white-space: normal; }
           .vl-library-grid { grid-template-columns: 1fr; }
+          .vl-library-controls { align-items: stretch; }
+          .vl-library-search { flex-basis: 100%; }
+          .vl-library-controls .vl-select { flex: 1 1 calc(50% - 4px); min-width: 0; }
           .vl-progression-name {
             width: 100%; margin-left: 0; align-items: stretch; flex-direction: column;
           }
