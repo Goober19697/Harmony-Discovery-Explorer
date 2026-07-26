@@ -357,7 +357,8 @@ export default function HarmonyDiscoveryExplorer() {
   const [progressionSaveStatus, setProgressionSaveStatus] = useState(null);
   const [progressionSaving, setProgressionSaving] = useState(false);
   const [progressionTitle, setProgressionTitle] = useState("");
-  const [libraryRefreshKey, setLibraryRefreshKey] = useState(0);
+  const [latestSavedVoicing, setLatestSavedVoicing] = useState(null);
+  const [latestSavedProgression, setLatestSavedProgression] = useState(null);
   const synthRef = useRef(null);
   const committedText = history[history.length - 1].text;
 
@@ -387,7 +388,7 @@ async function handleSaveVoicing(notes, chordName, emotion, useFlats = false) {
     });
 
     console.log("Voicing saved:", result);
-    setLibraryRefreshKey(key => key + 1);
+    setLatestSavedVoicing(result.voicing);
     alert("Voicing saved!");
   } catch (error) {
     console.error("Unable to save voicing:", error);
@@ -422,11 +423,11 @@ async function handleSaveProgression() {
   setProgressionSaveStatus(null);
 
   try {
-    await saveProgression({
+    const result = await saveProgression({
       title: normalizeProgressionTitle(progressionTitle),
       progression,
     });
-    setLibraryRefreshKey(key => key + 1);
+    setLatestSavedProgression(result.progression);
     setProgressionSaveStatus({ type: "success", message: "Progression saved!" });
   } catch (error) {
     console.error("Progression save failed:", error);
@@ -1611,7 +1612,6 @@ async function handleSaveProgression() {
       `}</style>
 
       <div className="vl-wrap">
-        <div className="vl-eyebrow">Harmony → Discovery</div>
         <h1 className="vl-title">Harmony Discovery Explorer</h1>
         <p className="vl-sub">
           Enter a voicing, hear where it can move, discover new colors and
@@ -1624,7 +1624,8 @@ async function handleSaveProgression() {
           onRestoreProgression={restoreSavedProgression}
           onPlayVoicing={playSavedVoicing}
           onPlayProgression={playSavedProgression}
-          refreshKey={libraryRefreshKey}
+          savedVoicing={latestSavedVoicing}
+          savedProgression={latestSavedProgression}
         />
 
         <div className="vl-panel vl-form">
@@ -1636,7 +1637,7 @@ async function handleSaveProgression() {
               value={rawText}
               onChange={e => setRawText(e.target.value)}
               onKeyDown={handleInputKeyDown}
-              placeholder="Enter notes here."
+              placeholder="Example: A3 C4 E4"
               aria-describedby="notes-help"
             />
             <div className="vl-input-help" id="notes-help">
@@ -1691,7 +1692,6 @@ async function handleSaveProgression() {
               >
                 {trailPlayingIdx !== null ? "■" : "▶"}
               </button>
-              <span className="vl-play-label">Tap</span>
             </div>
             <div className="vl-mode-toggle">
               {[["hold","Hold"],["hit","Hit"],["arp","Arp"],["mix-ha","Hold·Arp"],["mix-ah","Arp·Hold"]].map(([v, l]) => (

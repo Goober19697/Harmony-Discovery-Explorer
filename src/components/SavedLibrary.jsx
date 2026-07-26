@@ -33,7 +33,8 @@ export default function SavedLibrary({
   onRestoreProgression,
   onPlayVoicing,
   onPlayProgression,
-  refreshKey = 0,
+  savedVoicing,
+  savedProgression,
 }) {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("voicings");
@@ -74,7 +75,25 @@ export default function SavedLibrary({
 
   useEffect(() => {
     if (open) loadLibrary();
-  }, [open, refreshKey]);
+  }, [open]);
+
+  useEffect(() => {
+    if (open && savedVoicing) {
+      setVoicings(items => [
+        savedVoicing,
+        ...items.filter(item => item.id !== savedVoicing.id),
+      ]);
+    }
+  }, [open, savedVoicing]);
+
+  useEffect(() => {
+    if (open && savedProgression) {
+      setProgressions(items => [
+        savedProgression,
+        ...items.filter(item => item.id !== savedProgression.id),
+      ]);
+    }
+  }, [open, savedProgression]);
 
   useEffect(() => {
     if (editingProgressionId !== null && renameInputRef.current) {
@@ -222,11 +241,6 @@ export default function SavedLibrary({
           <h2 className="vl-library-title">Saved Library</h2>
         </div>
         <div className="vl-library-actions">
-          {open && (
-            <button className="vl-row-apply" type="button" onClick={loadLibrary} disabled={loading}>
-              {loading ? "Loading…" : "Refresh"}
-            </button>
-          )}
           <button
             className="vl-btn"
             type="button"
