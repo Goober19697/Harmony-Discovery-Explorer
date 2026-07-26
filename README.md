@@ -348,6 +348,18 @@ The backend has its own production image:
 docker build -f backend/Dockerfile -t harmony-backend backend
 ```
 
+### GitHub Container Registry
+
+GitHub Actions publishes the production Docker images to:
+
+-   `ghcr.io/goober19697/harmony-discovery-explorer-frontend`
+-   `ghcr.io/goober19697/harmony-discovery-explorer-backend`
+
+Pushes to `main` publish the `latest` and commit-SHA tags. Version tags matching
+`v*` publish semantic-version and commit-SHA tags. A later AWS deployment will
+pull these images from GitHub Container Registry; this publishing workflow does
+not deploy them.
+
 Outside Docker, run the production server from `backend/`:
 
 ``` bash
