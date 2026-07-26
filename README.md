@@ -2,6 +2,12 @@
 
 Harmony Discovery Explorer is a full-stack web application for exploring chord voicings, negative harmony, and harmonic progressions. Built with React, Flask, PostgreSQL, Docker, and GitHub Actions.
 
+## Live Demo
+
+[Launch Harmony Discovery Explorer](http://3.93.162.237)
+
+> The application is currently hosted on AWS EC2. Because the deployment currently uses the instance public IP rather than a domain, the address may change if the instance is stopped and restarted.
+
 ## Screenshot
 
 ![Harmony Discovery Explorer interface](docs/hero3.png)
@@ -48,6 +54,8 @@ Harmony Discovery Explorer is a full-stack web application for exploring chord v
 - Docker Compose
 - GitHub Actions
 - GitHub Container Registry (GHCR)
+- AWS EC2
+- Nginx reverse proxy
 
 ### Authentication
 
@@ -59,18 +67,20 @@ Harmony Discovery Explorer is a full-stack web application for exploring chord v
 ```text
 Harmony Discovery Explorer
 │
-├── React Frontend
-├── Flask REST API
+├── React + Vite Frontend
+├── Nginx Reverse Proxy
+├── Flask REST API + Gunicorn
 ├── PostgreSQL
-├── Docker
-├── Docker Compose
-└── GitHub Actions CI/CD
+├── Docker + Docker Compose
+├── GitHub Actions + GHCR
+└── AWS EC2
 ```
 
 The React client provides harmony analysis, audio playback, progression
 building, and library management. It communicates with the Flask REST API,
 which handles authentication and account-scoped data access. PostgreSQL stores
-users, voicings, progressions, and favorites.
+users, voicings, progressions, and favorites. In production, Nginx serves the
+Vite build and forwards `/api` requests to the Gunicorn-hosted Flask service.
 
 ## Installation
 
@@ -141,20 +151,61 @@ for integrated development:
 docker compose up --build
 ```
 
-## Production
+## Production Deployment
+
+```text
+Code push
+→ GitHub Actions
+→ frontend and backend Docker images
+→ GitHub Container Registry
+→ AWS EC2
+→ Docker Compose
+→ Nginx, Flask, and PostgreSQL
+```
 
 - The frontend is compiled by Vite and served as static assets by Nginx.
-- The Flask backend is served by Gunicorn.
+- Nginx reverse-proxies `/api` requests to the Flask REST API.
+- The Flask backend runs behind Gunicorn.
 - GitHub Actions automatically builds `linux/amd64` frontend and backend
   container images.
 - Images are published to GitHub Container Registry:
   - `ghcr.io/goober19697/harmony-discovery-explorer-frontend`
   - `ghcr.io/goober19697/harmony-discovery-explorer-backend`
 - Docker Compose is used to coordinate the frontend, backend, and PostgreSQL
-  services for deployment.
+  services on AWS EC2.
 
 Pushes to `main` publish `latest` and commit-SHA image tags. Git tags matching
 `v*` publish semantic-version and commit-SHA tags.
+
+Wait for GitHub Actions to finish publishing both images before updating the
+EC2 deployment. From the repository root on the instance, run:
+
+```bash
+git pull
+./scripts/deploy.sh
+```
+
+The deployment script pulls the current GHCR images, reconciles the production
+Compose services, and verifies the public frontend and backend health
+endpoints. It does not run `git pull` or remove the PostgreSQL volume.
+
+The equivalent manual commands are:
+
+```bash
+docker compose --env-file .env -f compose.prod.yaml pull
+docker compose --env-file .env -f compose.prod.yaml up -d
+docker compose --env-file .env -f compose.prod.yaml ps
+```
+
+The production `.env` file is managed only on the deployment host and is not
+committed to the repository.
+
+### Maintenance
+
+The legacy `voice-leading-explorer` container image and old deployment
+directory may be removed manually only after the current production deployment
+has been fully verified. The repository does not automatically delete GitHub
+packages or directories on the EC2 instance.
 
 ## Current Status
 
@@ -165,10 +216,11 @@ Pushes to `main` publish `latest` and commit-SHA image tags. Git tags matching
 - ✓ Dockerized services
 - ✓ CI/CD pipeline
 - ✓ Production-ready container builds
+- ✓ AWS EC2 deployment
 
 ## Roadmap
 
-- [ ] Cloud deployment
+- [ ] Domain name and HTTPS
 - [ ] Password reset
 - [ ] Email verification
 - [ ] User profiles
