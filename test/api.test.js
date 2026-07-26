@@ -12,6 +12,7 @@ import {
   registerUser,
   saveProgression,
   saveVoicing,
+  setSavedRequestUnauthorizedHandler,
   updateProgression,
   updateSavedProgression,
   updateVoicing,
@@ -41,16 +42,84 @@ test("authentication helpers include credentials on every request", async () => 
     assert.deepEqual(
       requests.map(([url]) => url),
       [
-        "http://localhost:5000/api/auth/register",
-        "http://localhost:5000/api/auth/login",
-        "http://localhost:5000/api/auth/me",
-        "http://localhost:5000/api/auth/logout",
+        "http://localhost:5001/api/auth/register",
+        "http://localhost:5001/api/auth/login",
+        "http://localhost:5001/api/auth/me",
+        "http://localhost:5001/api/auth/logout",
       ],
     );
     for (const [, options] of requests) {
       assert.equal(options.credentials, "include");
     }
   } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("every saved-library request includes credentials and never adds user_id", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = async (url, options = {}) => {
+    requests.push([url, options]);
+    return {
+      ok: true,
+      json: async () => {
+        if (url.endsWith("/voicings")) return { voicings: [], voicing: { id: 1 } };
+        if (url.endsWith("/progressions")) {
+          return { progressions: [], progression: { id: 2 } };
+        }
+        if (url.includes("/voicings/")) return { voicing: { id: 1 } };
+        return { progression: { id: 2 } };
+      },
+    };
+  };
+
+  try {
+    await saveVoicing({ notes: "A3 C4 E4" });
+    await getSavedVoicings();
+    await updateVoicing(1, { favorite: true });
+    await deleteSavedVoicing(1);
+    await saveProgression({
+      title: "Minor",
+      progression: [{ notes: "A3 C4 E4" }],
+    });
+    await getSavedProgressions();
+    await updateProgression(2, { title: "Mine" });
+    await updateSavedProgression(2, [{ notes: "A3 C4 E4" }]);
+    await deleteSavedProgression(2);
+
+    assert.equal(requests.length, 9);
+    for (const [, options] of requests) {
+      assert.equal(options.credentials, "include");
+      if (options.body) {
+        assert.equal(
+          Object.prototype.hasOwnProperty.call(JSON.parse(options.body), "user_id"),
+          false,
+        );
+      }
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("a saved-library 401 invokes the stale-session handler", async () => {
+  const originalFetch = globalThis.fetch;
+  let expired = false;
+  setSavedRequestUnauthorizedHandler(() => {
+    expired = true;
+  });
+  globalThis.fetch = async () => ({
+    ok: false,
+    status: 401,
+    json: async () => ({ error: "Authentication required." }),
+  });
+
+  try {
+    await assert.rejects(getSavedVoicings(), /Authentication required/);
+    assert.equal(expired, true);
+  } finally {
+    setSavedRequestUnauthorizedHandler(null);
     globalThis.fetch = originalFetch;
   }
 });
@@ -100,8 +169,8 @@ test("saved library helpers load both collection endpoints", async () => {
     assert.deepEqual(voicings.voicings, [{ id: 1 }]);
     assert.deepEqual(progressions.progressions, [{ id: 2 }]);
     assert.deepEqual(urls, [
-      "http://localhost:5000/api/voicings",
-      "http://localhost:5000/api/progressions",
+      "http://localhost:5001/api/voicings",
+      "http://localhost:5001/api/progressions",
     ]);
   } finally {
     globalThis.fetch = originalFetch;
@@ -119,7 +188,7 @@ test("saveProgression posts the ordered progression payload", async () => {
   };
 
   globalThis.fetch = async (url, options) => {
-    assert.equal(url, "http://localhost:5000/api/progressions");
+    assert.equal(url, "http://localhost:5001/api/progressions");
     assert.equal(options.method, "POST");
     assert.deepEqual(JSON.parse(options.body), payload);
     return {
@@ -161,7 +230,7 @@ test("updateSavedProgression patches the remaining ordered steps", async () => {
     { chord_name: "Bm7", notes: "B2 D3 F♯3 A3" },
   ];
   globalThis.fetch = async (url, options) => {
-    assert.equal(url, "http://localhost:5000/api/progressions/7");
+    assert.equal(url, "http://localhost:5001/api/progressions/7");
     assert.equal(options.method, "PATCH");
     assert.deepEqual(JSON.parse(options.body), { progression: steps });
     return {
@@ -206,8 +275,8 @@ test("saved record delete helpers target only their complete record endpoints", 
     await deleteSavedVoicing(3);
     await deleteSavedProgression(8);
     assert.deepEqual(calls, [
-      ["http://localhost:5000/api/voicings/3", "DELETE"],
-      ["http://localhost:5000/api/progressions/8", "DELETE"],
+      ["http://localhost:5001/api/voicings/3", "DELETE"],
+      ["http://localhost:5001/api/progressions/8", "DELETE"],
     ]);
   } finally {
     globalThis.fetch = originalFetch;
@@ -217,7 +286,7 @@ test("saved record delete helpers target only their complete record endpoints", 
 test("updateVoicing patches favorite state", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url, options) => {
-    assert.equal(url, "http://localhost:5000/api/voicings/4");
+    assert.equal(url, "http://localhost:5001/api/voicings/4");
     assert.equal(options.method, "PATCH");
     assert.deepEqual(JSON.parse(options.body), { favorite: true });
     return { ok: true, json: async () => ({ voicing: { id: 4, favorite: true } }) };

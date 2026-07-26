@@ -281,9 +281,13 @@ Environment variables:
 -   `SECRET_KEY` — required in production; use a long random value. If omitted,
     the backend emits a warning and uses an insecure development-only fallback.
 -   `SESSION_COOKIE_SECURE` — `false` for local HTTP, `true` for production HTTPS.
+-   `API_HOST` — Flask development-server bind address; defaults to `127.0.0.1`.
+-   `API_PORT` — Flask development-server port; defaults to `5001`.
+-   `FLASK_DEBUG` — controls debug mode only when running `backend/app.py`
+    directly; defaults to `true` for the existing development workflow.
 -   `FRONTEND_ORIGIN` — exact permitted frontend origin; defaults to
     `http://localhost:5173`. Wildcard origins are not used with cookies.
--   `VITE_API_BASE_URL` — Flask API origin; defaults to `http://localhost:5000`.
+-   `VITE_API_BASE_URL` — Flask API origin; defaults to `http://localhost:5001`.
     Keep its hostname aligned with the frontend hostname for local cookies.
 -   `VITE_SAMPLE_BASE_URL` — optional piano sample host override.
 
@@ -294,7 +298,41 @@ psql -d harmony_discovery_explorer -f backend/database/schema.sql
 ```
 
 The Phase 1 users table is independent of saved voicings and progressions.
-Those existing records remain shared until a later user-ownership migration.
+
+## Saved-record ownership migration
+
+Phase 2 adds nullable `user_id` columns, guarded foreign keys with
+`ON DELETE CASCADE`, ownership indexes, and `NOT VALID` non-null checks to
+saved voicings and progressions. The non-null checks apply to every new or
+updated row immediately, while allowing existing legacy rows to remain
+temporarily unowned.
+
+Apply the idempotent schema:
+
+``` bash
+psql harmony_discovery_explorer -f backend/database/schema.sql
+```
+
+Legacy rows where `user_id IS NULL` are retained but are not returned by any
+authenticated library query. They are never assigned automatically. After
+reviewing ownership manually, an administrator may explicitly assign selected
+rows:
+
+``` sql
+UPDATE voicings SET user_id = <verified_user_id> WHERE id IN (<verified_ids>);
+UPDATE progressions SET user_id = <verified_user_id> WHERE id IN (<verified_ids>);
+```
+
+Alternatively, confirmed obsolete legacy rows may be deleted explicitly. Once
+no `NULL` owners remain, validate the constraints and convert the columns to
+native `NOT NULL`:
+
+``` sql
+ALTER TABLE voicings VALIDATE CONSTRAINT voicings_user_id_required;
+ALTER TABLE progressions VALIDATE CONSTRAINT progressions_user_id_required;
+ALTER TABLE voicings ALTER COLUMN user_id SET NOT NULL;
+ALTER TABLE progressions ALTER COLUMN user_id SET NOT NULL;
+```
 
 ## Production
 

@@ -8,18 +8,20 @@ from services.voicing_service import update_voicing
 class VoicingServiceTests(unittest.TestCase):
     @patch("services.voicing_service.update_voicing_record")
     def test_favorite_update_preserves_other_fields(self, update_record):
-        update_voicing(7, {"favorite": True})
-        update_record.assert_called_once_with(7, True)
+        update_voicing(1, 7, {"favorite": True})
+        update_record.assert_called_once_with(1, 7, True)
 
     def test_favorite_must_be_boolean(self):
         with self.assertRaisesRegex(ValueError, "boolean"):
-            update_voicing(7, {"favorite": "yes"})
+            update_voicing(1, 7, {"favorite": "yes"})
 
 
 class VoicingRouteTests(unittest.TestCase):
     def setUp(self):
         app.config["TESTING"] = True
         self.client = app.test_client()
+        with self.client.session_transaction() as session:
+            session["user_id"] = 1
 
     @patch("routes.voicings.list_voicings", return_value=[])
     def test_get_empty_returns_200_with_empty_array(self, _list_voicings):
@@ -27,6 +29,7 @@ class VoicingRouteTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json(), {"voicings": []})
+        _list_voicings.assert_called_once_with(1)
 
     @patch("routes.voicings.list_voicings")
     def test_get_returns_existing_records_newest_first(self, list_voicings_mock):
@@ -57,6 +60,7 @@ class VoicingRouteTests(unittest.TestCase):
             [2, 1],
         )
         self.assertEqual(response.get_json()["voicings"][0]["favorite"], True)
+        list_voicings_mock.assert_called_once_with(1)
 
     @patch("routes.voicings.update_voicing")
     def test_patch_voicing_favorite_returns_updated_record(self, update_voicing_mock):
@@ -71,12 +75,13 @@ class VoicingRouteTests(unittest.TestCase):
         response = self.client.patch("/api/voicings/7", json={"favorite": True})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["voicing"]["favorite"], True)
+        update_voicing_mock.assert_called_once_with(1, 7, {"favorite": True})
 
     @patch("routes.voicings.remove_voicing", return_value=True)
     def test_delete_voicing_returns_200(self, remove_voicing):
         response = self.client.delete("/api/voicings/7")
         self.assertEqual(response.status_code, 200)
-        remove_voicing.assert_called_once_with(7)
+        remove_voicing.assert_called_once_with(1, 7)
 
     @patch("routes.voicings.remove_voicing", return_value=False)
     def test_delete_voicing_returns_404(self, _remove_voicing):

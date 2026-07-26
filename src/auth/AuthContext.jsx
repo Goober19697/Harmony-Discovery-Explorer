@@ -5,6 +5,7 @@ import {
   loginUser,
   logoutUser,
   registerUser,
+  setSavedRequestUnauthorizedHandler,
 } from "../services/api.js";
 
 const AuthContext = createContext(null);
@@ -12,6 +13,15 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authNotice, setAuthNotice] = useState(null);
+
+  useEffect(() => {
+    setSavedRequestUnauthorizedHandler(() => {
+      setUser(null);
+      setAuthNotice("Your session expired. Please log in again.");
+    });
+    return () => setSavedRequestUnauthorizedHandler(null);
+  }, []);
 
   async function refreshCurrentUser() {
     try {
@@ -49,19 +59,22 @@ export function AuthProvider({ children }) {
 
   async function register(data) {
     const result = await registerUser(data);
+    setAuthNotice(null);
     setUser(result.user);
     return result.user;
   }
 
   async function login(data) {
     const result = await loginUser(data);
+    setAuthNotice(null);
     setUser(result.user);
     return result.user;
   }
 
   async function logout() {
-    await logoutUser();
     setUser(null);
+    setAuthNotice(null);
+    await logoutUser();
   }
 
   return (
@@ -70,6 +83,8 @@ export function AuthProvider({ children }) {
         user,
         isAuthenticated: Boolean(user),
         isLoading,
+        authNotice,
+        clearAuthNotice: () => setAuthNotice(null),
         register,
         login,
         logout,

@@ -19,6 +19,17 @@ def environment_flag(name, default=False):
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def environment_port(name, default):
+    value = os.getenv(name, str(default))
+    try:
+        port = int(value)
+    except (TypeError, ValueError) as error:
+        raise ValueError(f"{name} must be an integer port number.") from error
+    if not 1 <= port <= 65535:
+        raise ValueError(f"{name} must be between 1 and 65535.")
+    return port
+
+
 app = Flask(__name__)
 secret_key = os.getenv("SECRET_KEY")
 if not secret_key:
@@ -56,4 +67,8 @@ def health():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(
+        host=os.getenv("API_HOST", "127.0.0.1"),
+        port=environment_port("API_PORT", 5001),
+        debug=environment_flag("FLASK_DEBUG", default=True),
+    )

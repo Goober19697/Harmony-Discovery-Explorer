@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || "http://localhost:5001";
 
 export class ApiError extends Error {
   constructor(message, status = 0) {
@@ -8,7 +8,13 @@ export class ApiError extends Error {
   }
 }
 
-async function authRequest(path, options = {}) {
+let savedRequestUnauthorizedHandler = null;
+
+export function setSavedRequestUnauthorizedHandler(handler) {
+  savedRequestUnauthorizedHandler = handler;
+}
+
+async function apiRequest(path, options = {}, handleSavedUnauthorized = false) {
   let response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
@@ -20,13 +26,20 @@ async function authRequest(path, options = {}) {
       },
     });
   } catch {
-    throw new ApiError("Unable to reach the authentication server.");
+    throw new ApiError("Unable to reach the server.");
   }
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (
+      handleSavedUnauthorized
+      && response.status === 401
+      && savedRequestUnauthorizedHandler
+    ) {
+      savedRequestUnauthorizedHandler();
+    }
     throw new ApiError(
-      data.error || "The authentication request could not be completed.",
+      data.error || `Backend returned status ${response.status}`,
       response.status,
     );
   }
@@ -34,25 +47,25 @@ async function authRequest(path, options = {}) {
 }
 
 export function registerUser(data) {
-  return authRequest("/api/auth/register", {
+  return apiRequest("/api/auth/register", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
 export function loginUser(data) {
-  return authRequest("/api/auth/login", {
+  return apiRequest("/api/auth/login", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
 export function logoutUser() {
-  return authRequest("/api/auth/logout", { method: "POST" });
+  return apiRequest("/api/auth/logout", { method: "POST" });
 }
 
 export function getCurrentUser() {
-  return authRequest("/api/auth/me");
+  return apiRequest("/api/auth/me");
 }
 
 export async function checkBackendHealth() {
@@ -66,78 +79,32 @@ export async function checkBackendHealth() {
 }
 
 export async function saveVoicing(voicing) {
-  const response = await fetch(`${API_BASE_URL}/api/voicings`, {
+  return apiRequest("/api/voicings", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(voicing),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || `Backend returned status ${response.status}`);
-  }
-
-  return data;
+  }, true);
 }
 
 export async function getSavedVoicings() {
-  const response = await fetch(`${API_BASE_URL}/api/voicings`);
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || `Backend returned status ${response.status}`);
-  }
-
-  return data;
+  return apiRequest("/api/voicings", {}, true);
 }
 
 export async function saveProgression(progression) {
-  const response = await fetch(`${API_BASE_URL}/api/progressions`, {
+  return apiRequest("/api/progressions", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(progression),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || `Backend returned status ${response.status}`);
-  }
-
-  return data;
+  }, true);
 }
 
 export async function getSavedProgressions() {
-  const response = await fetch(`${API_BASE_URL}/api/progressions`);
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || `Backend returned status ${response.status}`);
-  }
-
-  return data;
+  return apiRequest("/api/progressions", {}, true);
 }
 
 export async function updateProgression(progressionId, payload) {
-  const response = await fetch(`${API_BASE_URL}/api/progressions/${progressionId}`, {
+  return apiRequest(`/api/progressions/${progressionId}`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(payload),
-  });
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || `Backend returned status ${response.status}`);
-  }
-
-  return data;
+  }, true);
 }
 
 export function updateSavedProgression(progressionId, progression) {
@@ -145,27 +112,14 @@ export function updateSavedProgression(progressionId, progression) {
 }
 
 export async function updateVoicing(voicingId, payload) {
-  const response = await fetch(`${API_BASE_URL}/api/voicings/${voicingId}`, {
+  return apiRequest(`/api/voicings/${voicingId}`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(payload),
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error || `Backend returned status ${response.status}`);
-  }
-  return data;
+  }, true);
 }
 
 async function deleteSavedRecord(path) {
-  const response = await fetch(`${API_BASE_URL}${path}`, { method: "DELETE" });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error || `Backend returned status ${response.status}`);
-  }
-  return data;
+  return apiRequest(path, { method: "DELETE" }, true);
 }
 
 export function deleteSavedVoicing(voicingId) {

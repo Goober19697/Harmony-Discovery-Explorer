@@ -6,7 +6,7 @@ from database.db import (
 )
 
 
-def create_progression(data):
+def create_progression(user_id, data):
     if not isinstance(data, dict):
         raise ValueError("request body must be a JSON object")
 
@@ -24,14 +24,18 @@ def create_progression(data):
         if not isinstance(notes, str) or not notes.strip():
             raise ValueError(f"progression step {index + 1} requires notes")
 
-    return insert_progression(title=title, progression=progression)
+    return insert_progression(
+        user_id=user_id,
+        title=title,
+        progression=progression,
+    )
 
 
-def list_progressions():
-    return get_all_progressions()
+def list_progressions(user_id):
+    return get_all_progressions(user_id)
 
 
-def update_progression(progression_id, data):
+def update_progression(user_id, progression_id, data):
     if not isinstance(data, dict):
         raise ValueError("request body must be a JSON object")
 
@@ -72,6 +76,7 @@ def update_progression(progression_id, data):
         favorite = data["favorite"]
 
     return update_progression_record(
+        user_id,
         progression_id,
         title=title,
         progression=progression,
@@ -79,5 +84,5 @@ def update_progression(progression_id, data):
     )
 
 
-def remove_progression(progression_id):
-    return delete_progression(progression_id)
+def remove_progression(user_id, progression_id):
+    return delete_progression(user_id, progression_id)

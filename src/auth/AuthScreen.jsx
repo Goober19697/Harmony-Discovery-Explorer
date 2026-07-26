@@ -4,7 +4,7 @@ import { useAuth } from "./AuthContext.jsx";
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export default function AuthScreen() {
-  const { login, register } = useAuth();
+  const { authNotice, clearAuthNotice, login, register } = useAuth();
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState({
     displayName: "",
@@ -22,12 +22,14 @@ export default function AuthScreen() {
   function changeMode(nextMode) {
     setMode(nextMode);
     setError(null);
+    clearAuthNotice();
     setForm(current => ({ ...current, password: "", confirmPassword: "" }));
   }
 
   async function submit(event) {
     event.preventDefault();
     setError(null);
+    clearAuthNotice();
 
     const email = form.email.trim().toLowerCase();
     if (!EMAIL_PATTERN.test(email)) {
@@ -194,7 +196,9 @@ export default function AuthScreen() {
               />
             </label>
           )}
-          {error && <p className="auth-error" role="alert">{error}</p>}
+          {(error || authNotice) && (
+            <p className="auth-error" role="alert">{error || authNotice}</p>
+          )}
           <button className="auth-submit" type="submit" disabled={submitting}>
             {submitting
               ? (isRegistering ? "Creating account…" : "Logging in…")

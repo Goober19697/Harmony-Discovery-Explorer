@@ -62,16 +62,16 @@ def get_user_by_id(user_id):
     return _user_from_row(row)
 
 
-def insert_voicing(notes, chord_name=None, emotion=None):
+def insert_voicing(user_id, notes, chord_name=None, emotion=None):
     sql = """
-        INSERT INTO voicings (notes, chord_name, emotion)
-        VALUES (%s, %s, %s)
+        INSERT INTO voicings (user_id, notes, chord_name, emotion)
+        VALUES (%s, %s, %s, %s)
         RETURNING id, notes, chord_name, emotion, created_at, favorite;
     """
 
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            cursor.execute(sql, (notes, chord_name, emotion))
+            cursor.execute(sql, (user_id, notes, chord_name, emotion))
             row = cursor.fetchone()
 
     return {
@@ -84,16 +84,16 @@ def insert_voicing(notes, chord_name=None, emotion=None):
     }
 
 
-def insert_progression(title, progression):
+def insert_progression(user_id, title, progression):
     sql = """
-        INSERT INTO progressions (title, progression)
-        VALUES (%s, %s)
+        INSERT INTO progressions (user_id, title, progression)
+        VALUES (%s, %s, %s)
         RETURNING id, title, progression, created_at, favorite;
     """
 
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            cursor.execute(sql, (title, Jsonb(progression)))
+            cursor.execute(sql, (user_id, title, Jsonb(progression)))
             row = cursor.fetchone()
 
     return {
@@ -105,16 +105,17 @@ def insert_progression(title, progression):
     }
 
 
-def get_all_voicings():
+def get_all_voicings(user_id):
     sql = """
         SELECT id, notes, chord_name, emotion, created_at, favorite
         FROM voicings
+        WHERE user_id = %s
         ORDER BY created_at DESC, id DESC;
     """
 
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            cursor.execute(sql)
+            cursor.execute(sql, (user_id,))
             rows = cursor.fetchall()
 
     return [
@@ -130,16 +131,17 @@ def get_all_voicings():
     ]
 
 
-def get_all_progressions():
+def get_all_progressions(user_id):
     sql = """
         SELECT id, title, progression, created_at, favorite
         FROM progressions
+        WHERE user_id = %s
         ORDER BY created_at DESC, id DESC;
     """
 
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            cursor.execute(sql)
+            cursor.execute(sql, (user_id,))
             rows = cursor.fetchall()
 
     return [
@@ -154,7 +156,9 @@ def get_all_progressions():
     ]
 
 
-def update_progression_record(progression_id, title=None, progression=None, favorite=None):
+def update_progression_record(
+    user_id, progression_id, title=None, progression=None, favorite=None
+):
     assignments = []
     values = []
     if title is not None:
@@ -170,10 +174,10 @@ def update_progression_record(progression_id, title=None, progression=None, favo
     sql = f"""
         UPDATE progressions
         SET {", ".join(assignments)}
-        WHERE id = %s
+        WHERE id = %s AND user_id = %s
         RETURNING id, title, progression, created_at, favorite;
     """
-    values.append(progression_id)
+    values.extend((progression_id, user_id))
 
     with get_connection() as connection:
         with connection.cursor() as cursor:
@@ -192,16 +196,16 @@ def update_progression_record(progression_id, title=None, progression=None, favo
     }
 
 
-def update_voicing_record(voicing_id, favorite):
+def update_voicing_record(user_id, voicing_id, favorite):
     sql = """
         UPDATE voicings
         SET favorite = %s
-        WHERE id = %s
+        WHERE id = %s AND user_id = %s
         RETURNING id, notes, chord_name, emotion, created_at, favorite;
     """
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            cursor.execute(sql, (favorite, voicing_id))
+            cursor.execute(sql, (favorite, voicing_id, user_id))
             row = cursor.fetchone()
 
     if row is None:
@@ -216,19 +220,19 @@ def update_voicing_record(voicing_id, favorite):
     }
 
 
-def delete_voicing(voicing_id):
-    sql = "DELETE FROM voicings WHERE id = %s RETURNING id;"
+def delete_voicing(user_id, voicing_id):
+    sql = "DELETE FROM voicings WHERE id = %s AND user_id = %s RETURNING id;"
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            cursor.execute(sql, (voicing_id,))
+            cursor.execute(sql, (voicing_id, user_id))
             row = cursor.fetchone()
     return row is not None
 
 
-def delete_progression(progression_id):
-    sql = "DELETE FROM progressions WHERE id = %s RETURNING id;"
+def delete_progression(user_id, progression_id):
+    sql = "DELETE FROM progressions WHERE id = %s AND user_id = %s RETURNING id;"
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            cursor.execute(sql, (progression_id,))
+            cursor.execute(sql, (progression_id, user_id))
             row = cursor.fetchone()
     return row is not None
