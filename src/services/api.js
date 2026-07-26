@@ -1,4 +1,59 @@
-const API_BASE_URL = "http://127.0.0.1:5000";
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || "http://localhost:5000";
+
+export class ApiError extends Error {
+  constructor(message, status = 0) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+async function authRequest(path, options = {}) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      credentials: "include",
+      headers: {
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...options.headers,
+      },
+    });
+  } catch {
+    throw new ApiError("Unable to reach the authentication server.");
+  }
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      data.error || "The authentication request could not be completed.",
+      response.status,
+    );
+  }
+  return data;
+}
+
+export function registerUser(data) {
+  return authRequest("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function loginUser(data) {
+  return authRequest("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function logoutUser() {
+  return authRequest("/api/auth/logout", { method: "POST" });
+}
+
+export function getCurrentUser() {
+  return authRequest("/api/auth/me");
+}
 
 export async function checkBackendHealth() {
   const response = await fetch(`${API_BASE_URL}/api/health`);

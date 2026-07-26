@@ -238,11 +238,28 @@ standalone/
 
 -   Node.js 18+
 -   npm
+-   Python 3
+-   PostgreSQL
 
 ## Install
 
 ``` bash
 npm install
+python -m pip install -r backend/requirements.txt
+psql -d harmony_discovery_explorer -f backend/database/schema.sql
+```
+
+Copy `.env.example` to `.env`, set a development `SECRET_KEY`, and start the
+backend:
+
+``` bash
+cd backend
+flask --app app run --debug
+```
+
+In another terminal, start the frontend:
+
+``` bash
 npm run dev
 ```
 
@@ -251,6 +268,33 @@ Open:
 ``` text
 http://localhost:5173
 ```
+
+## Authentication configuration
+
+Authentication uses Flask's signed server-side session interface with an
+HTTP-only cookie. The React client sends credentialed requests to the Flask
+backend. During local HTTP development, keep `SESSION_COOKIE_SECURE=false`.
+Production must use HTTPS and `SESSION_COOKIE_SECURE=true`.
+
+Environment variables:
+
+-   `SECRET_KEY` — required in production; use a long random value. If omitted,
+    the backend emits a warning and uses an insecure development-only fallback.
+-   `SESSION_COOKIE_SECURE` — `false` for local HTTP, `true` for production HTTPS.
+-   `FRONTEND_ORIGIN` — exact permitted frontend origin; defaults to
+    `http://localhost:5173`. Wildcard origins are not used with cookies.
+-   `VITE_API_BASE_URL` — Flask API origin; defaults to `http://localhost:5000`.
+    Keep its hostname aligned with the frontend hostname for local cookies.
+-   `VITE_SAMPLE_BASE_URL` — optional piano sample host override.
+
+Apply additive schema changes without dropping existing saved records:
+
+``` bash
+psql -d harmony_discovery_explorer -f backend/database/schema.sql
+```
+
+The Phase 1 users table is independent of saved voicings and progressions.
+Those existing records remain shared until a later user-ownership migration.
 
 ## Production
 

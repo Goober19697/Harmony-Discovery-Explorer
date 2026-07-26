@@ -26,6 +26,7 @@ import {
 import { analyzeVoicing, analyzeVoicingOptions, QUALITIES } from "./chordPatterns.js";
 import { checkBackendHealth, saveProgression, saveVoicing } from "./services/api";
 import SavedLibrary from "./components/SavedLibrary.jsx";
+import { useAuth } from "./auth/AuthContext.jsx";
 import {
   normalizeProgressionTitle,
   savedProgressionMidis,
@@ -345,6 +346,7 @@ function PianoKeys({ midis, flats = false }) {
 // ---------- component ----------
 
 export default function HarmonyDiscoveryExplorer() {
+  const { user, logout } = useAuth();
   const [rawText, setRawText] = useState("");
   const [history, setHistory] = useState([{ text: "", label: null }]); // trail of committed voicings
   const [error, setError] = useState(null);
@@ -361,6 +363,14 @@ export default function HarmonyDiscoveryExplorer() {
   const [latestSavedProgression, setLatestSavedProgression] = useState(null);
   const synthRef = useRef(null);
   const committedText = history[history.length - 1].text;
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } catch (logoutError) {
+      alert(logoutError.message || "Unable to log out. Please try again.");
+    }
+  }
 
   useEffect(() => {
   async function connectToBackend() {
@@ -933,6 +943,25 @@ async function handleSaveProgression() {
         }
         .vl-root *, .vl-root *::before, .vl-root *::after { box-sizing: border-box; }
         .vl-wrap { width: 100%; max-width: 760px; margin: 0 auto; }
+        .vl-account-bar {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 10px;
+          margin-bottom: 12px;
+          color: var(--ink-dim);
+          font-size: 11px;
+        }
+        .vl-account-name { overflow-wrap: anywhere; }
+        .vl-logout {
+          border: 0;
+          padding: 3px 0;
+          background: transparent;
+          color: var(--brass);
+          font: 500 10px 'JetBrains Mono', monospace;
+          cursor: pointer;
+        }
+        .vl-logout:hover { text-decoration: underline; }
         .vl-eyebrow {
           font-family: 'JetBrains Mono', monospace;
           font-size: 11px;
@@ -1612,6 +1641,10 @@ async function handleSaveProgression() {
       `}</style>
 
       <div className="vl-wrap">
+        <div className="vl-account-bar">
+          <span className="vl-account-name">{user.display_name || user.email}</span>
+          <button className="vl-logout" type="button" onClick={handleLogout}>Logout</button>
+        </div>
         <h1 className="vl-title">Harmony Discovery Explorer</h1>
         <p className="vl-sub">
           Enter a voicing, hear where it can move, discover new colors and

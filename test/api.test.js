@@ -4,8 +4,12 @@ import assert from "node:assert/strict";
 import {
   deleteSavedProgression,
   deleteSavedVoicing,
+  getCurrentUser,
   getSavedProgressions,
   getSavedVoicings,
+  loginUser,
+  logoutUser,
+  registerUser,
   saveProgression,
   saveVoicing,
   updateProgression,
@@ -14,6 +18,42 @@ import {
 } from "../src/services/api.js";
 import { formatOrderedNotes } from "../src/noteParsing.js";
 import { negativeHarmonySourceDescription } from "../src/negativeHarmony.js";
+
+test("authentication helpers include credentials on every request", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = async (url, options = {}) => {
+    requests.push([url, options]);
+    return {
+      ok: true,
+      json: async () => url.endsWith("/logout")
+        ? { message: "Logged out." }
+        : { user: { id: 1, email: "user@example.com" } },
+    };
+  };
+
+  try {
+    await registerUser({ email: "user@example.com", password: "password" });
+    await loginUser({ email: "user@example.com", password: "password" });
+    await getCurrentUser();
+    await logoutUser();
+
+    assert.deepEqual(
+      requests.map(([url]) => url),
+      [
+        "http://localhost:5000/api/auth/register",
+        "http://localhost:5000/api/auth/login",
+        "http://localhost:5000/api/auth/me",
+        "http://localhost:5000/api/auth/logout",
+      ],
+    );
+    for (const [, options] of requests) {
+      assert.equal(options.credentials, "include");
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
 
 test("negative-harmony voicing save sends exact notes and source context", async () => {
   const originalFetch = globalThis.fetch;
@@ -60,8 +100,8 @@ test("saved library helpers load both collection endpoints", async () => {
     assert.deepEqual(voicings.voicings, [{ id: 1 }]);
     assert.deepEqual(progressions.progressions, [{ id: 2 }]);
     assert.deepEqual(urls, [
-      "http://127.0.0.1:5000/api/voicings",
-      "http://127.0.0.1:5000/api/progressions",
+      "http://localhost:5000/api/voicings",
+      "http://localhost:5000/api/progressions",
     ]);
   } finally {
     globalThis.fetch = originalFetch;
@@ -79,7 +119,7 @@ test("saveProgression posts the ordered progression payload", async () => {
   };
 
   globalThis.fetch = async (url, options) => {
-    assert.equal(url, "http://127.0.0.1:5000/api/progressions");
+    assert.equal(url, "http://localhost:5000/api/progressions");
     assert.equal(options.method, "POST");
     assert.deepEqual(JSON.parse(options.body), payload);
     return {
@@ -121,7 +161,7 @@ test("updateSavedProgression patches the remaining ordered steps", async () => {
     { chord_name: "Bm7", notes: "B2 D3 F♯3 A3" },
   ];
   globalThis.fetch = async (url, options) => {
-    assert.equal(url, "http://127.0.0.1:5000/api/progressions/7");
+    assert.equal(url, "http://localhost:5000/api/progressions/7");
     assert.equal(options.method, "PATCH");
     assert.deepEqual(JSON.parse(options.body), { progression: steps });
     return {
@@ -166,8 +206,8 @@ test("saved record delete helpers target only their complete record endpoints", 
     await deleteSavedVoicing(3);
     await deleteSavedProgression(8);
     assert.deepEqual(calls, [
-      ["http://127.0.0.1:5000/api/voicings/3", "DELETE"],
-      ["http://127.0.0.1:5000/api/progressions/8", "DELETE"],
+      ["http://localhost:5000/api/voicings/3", "DELETE"],
+      ["http://localhost:5000/api/progressions/8", "DELETE"],
     ]);
   } finally {
     globalThis.fetch = originalFetch;
@@ -177,7 +217,7 @@ test("saved record delete helpers target only their complete record endpoints", 
 test("updateVoicing patches favorite state", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url, options) => {
-    assert.equal(url, "http://127.0.0.1:5000/api/voicings/4");
+    assert.equal(url, "http://localhost:5000/api/voicings/4");
     assert.equal(options.method, "PATCH");
     assert.deepEqual(JSON.parse(options.body), { favorite: true });
     return { ok: true, json: async () => ({ voicing: { id: 4, favorite: true } }) };

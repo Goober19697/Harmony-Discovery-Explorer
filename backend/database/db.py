@@ -11,6 +11,57 @@ def get_connection():
     )
 
 
+def _user_from_row(row):
+    if row is None:
+        return None
+    return {
+        "id": row[0],
+        "email": row[1],
+        "password_hash": row[2],
+        "display_name": row[3],
+        "created_at": row[4].isoformat(),
+    }
+
+
+def insert_user(email, password_hash, display_name=None):
+    sql = """
+        INSERT INTO users (email, password_hash, display_name)
+        VALUES (%s, %s, %s)
+        RETURNING id, email, password_hash, display_name, created_at;
+    """
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(sql, (email, password_hash, display_name))
+            row = cursor.fetchone()
+    return _user_from_row(row)
+
+
+def get_user_by_email(email):
+    sql = """
+        SELECT id, email, password_hash, display_name, created_at
+        FROM users
+        WHERE email = %s;
+    """
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(sql, (email,))
+            row = cursor.fetchone()
+    return _user_from_row(row)
+
+
+def get_user_by_id(user_id):
+    sql = """
+        SELECT id, email, password_hash, display_name, created_at
+        FROM users
+        WHERE id = %s;
+    """
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(sql, (user_id,))
+            row = cursor.fetchone()
+    return _user_from_row(row)
+
+
 def insert_voicing(notes, chord_name=None, emotion=None):
     sql = """
         INSERT INTO voicings (notes, chord_name, emotion)
