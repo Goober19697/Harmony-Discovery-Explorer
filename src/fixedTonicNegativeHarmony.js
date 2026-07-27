@@ -1,13 +1,12 @@
-export const NEGATIVE_HARMONY_TONIC_PC = 5;
-
 function pitchClass(value) {
   return ((value % 12) + 12) % 12;
 }
 
 export function negativeHarmonyPitchClass(
   originalPitchClass,
-  tonicPitchClass = NEGATIVE_HARMONY_TONIC_PC,
+  tonicPitchClass,
 ) {
+  if (!Number.isInteger(tonicPitchClass)) return null;
   return pitchClass(2 * pitchClass(tonicPitchClass) + 7 - pitchClass(originalPitchClass));
 }
 
@@ -22,11 +21,8 @@ export function nearestMidiForPitchClass(originalMidi, targetPitchClass) {
   return lowerDistance <= upperDistance ? lower : upper;
 }
 
-export function fixedTonicNegativeHarmony(
-  midis,
-  tonicPitchClass = NEGATIVE_HARMONY_TONIC_PC,
-) {
-  if (!Array.isArray(midis)) return [];
+export function tonicNegativeHarmony(midis, tonicPitchClass) {
+  if (!Array.isArray(midis) || !Number.isInteger(tonicPitchClass)) return [];
   return midis.map(originalMidi => {
     const transformedPitchClass = negativeHarmonyPitchClass(
       originalMidi,
