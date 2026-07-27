@@ -3,7 +3,11 @@
 Explore piano chord voicings, Shadow Voicing transformations, and harmonic progressions through an interactive full-stack web application.
 
 <p align="center">
-  <img src="docs/hero4.png" alt="Harmony Discovery Explorer Interface" width="90%">
+  <img
+    src="./docs/Hero4.png"
+    alt="Harmony Discovery Explorer Interface"
+    width="100%"
+  />
 </p>
 
 ## Live Demo
