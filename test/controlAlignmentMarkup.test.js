@@ -25,7 +25,9 @@ test("generated-card controls form one aligned row without an extra Add wrapper"
   assert.match(source, /className="vl-generated-controls"[\s\S]*playVoicing\(selectedNotes, r\.key\)[\s\S]*className="vl-bass-order"[\s\S]*applyResult\(r\)/);
   assert.match(source, /\.vl-play-control\s*\{[^}]*height:\s*42px;/s);
   assert.match(source, /\.vl-bass-order\s*\{[^}]*height:\s*42px;/s);
+  assert.match(source, /\.vl-bass-order select\s*\{[^}]*height:\s*42px;/s);
   assert.match(source, /\.vl-row-apply\s*\{[^}]*height:\s*42px;/s);
+  assert.doesNotMatch(source, /<span>Bass<\/span>/);
 });
 
 test("current and derived voicing action rows align play icons with adjacent controls", async () => {
@@ -47,6 +49,9 @@ test("saved voicing and progression action rows align compact controls", async (
     explorer,
     /\.vl-library-card-actions\s*\{[^}]*display:\s*flex;[^}]*align-items:\s*center;[^}]*flex-wrap:\s*wrap;[^}]*gap:\s*8px;/s,
   );
+  assert.match(explorer, /\.vl-single-voicing-actions\s*\{[^}]*align-items:\s*flex-start;/s);
+  assert.match(library, /className="vl-library-card-actions vl-single-voicing-actions"/);
+  assert.doesNotMatch(explorer, /\.vl-play-control\.has-tap \.vl-row-apply/);
   assert.match(library, /▶ Play"}[\s\S]*>\s*Restore\s*<\/button>/);
   assert.match(
     library,

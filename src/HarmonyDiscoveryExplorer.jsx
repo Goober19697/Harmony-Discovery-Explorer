@@ -1174,19 +1174,28 @@ async function handleSaveProgression() {
           color: var(--brass);
           margin-bottom: 6px;
         }
+        .vl-hero {
+          width: 100%;
+          padding: 20px 16px 34px;
+          text-align: center;
+        }
         .vl-title {
           font-weight: 600;
-          font-size: 34px;
-          line-height: 1.15;
-          margin: 0 0 4px;
-          letter-spacing: -0.01em;
+          font-size: clamp(38px, 6vw, 52px);
+          line-height: 1.08;
+          margin: 0 0 18px;
+          letter-spacing: -0.015em;
+          text-align: center;
         }
         .vl-sub {
           color: var(--ink-dim);
-          font-size: 14px;
-          margin: 0 0 28px;
-          max-width: 52ch;
-          line-height: 1.5;
+          font-size: 15px;
+          font-weight: 400;
+          margin: 0 auto;
+          max-width: 660px;
+          line-height: 1.65;
+          text-align: center;
+          opacity: 0.9;
         }
         .vl-panel {
           background: var(--panel);
@@ -1488,7 +1497,7 @@ async function handleSaveProgression() {
           flex-direction: column;
           align-items: stretch;
           justify-content: center;
-          gap: 2px;
+          gap: 0;
           height: 42px;
           color: var(--ink-dim);
           font-family: 'JetBrains Mono', monospace;
@@ -1503,7 +1512,7 @@ async function handleSaveProgression() {
           color: var(--ink-dim);
           font-family: 'JetBrains Mono', monospace;
           font-size: 10px;
-          height: 30px;
+          height: 42px;
           padding: 0 24px 0 7px;
           cursor: pointer;
         }
@@ -1534,11 +1543,6 @@ async function handleSaveProgression() {
         .vl-play-control {
           height: 42px;
           box-sizing: border-box;
-        }
-        .vl-play-control.has-tap .vl-row-apply {
-          height: 30px;
-          padding-top: 0;
-          padding-bottom: 0;
         }
         .vl-play-label {
           color: var(--ink-dim);
@@ -1761,6 +1765,9 @@ async function handleSaveProgression() {
         .vl-library-card-actions {
           display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
         }
+        .vl-single-voicing-actions {
+          align-items: flex-start;
+        }
         .vl-library-card-actions .vl-row-apply:disabled {
           cursor: wait; opacity: 0.6;
         }
@@ -1854,8 +1861,9 @@ async function handleSaveProgression() {
               max(40px, env(safe-area-inset-bottom))
               max(12px, env(safe-area-inset-left));
           }
-          .vl-title { font-size: clamp(27px, 9vw, 34px); line-height: 1.08; }
-          .vl-sub { margin-bottom: 22px; }
+          .vl-hero { padding: 14px 4px 30px; }
+          .vl-title { font-size: clamp(32px, 10vw, 42px); line-height: 1.08; }
+          .vl-sub { font-size: 14px; line-height: 1.6; }
           .vl-panel { padding: 14px; }
           .vl-form { display: grid; grid-template-columns: minmax(0, 1fr); }
           .vl-form .vl-field, .vl-input { width: 100%; min-width: 0; }
@@ -1928,12 +1936,13 @@ async function handleSaveProgression() {
           <span className="vl-account-name">{user.display_name || user.email}</span>
           <button className="vl-logout" type="button" onClick={handleLogout}>Logout</button>
         </div>
-        <h1 className="vl-title display-title">Harmony Discovery Explorer</h1>
-        <p className="vl-sub">
-          Enter a voicing, hear where it can move, discover new colors and
-          interpretations for every harmony, and—if inspiration strikes—build a
-          progression trail.
-        </p>
+        <header className="vl-hero">
+          <h1 className="vl-title display-title">Harmony Discovery Explorer</h1>
+          <p className="vl-sub">
+            Discover beautiful voice leading, harmonic color, and inspiring chord
+            transformations for every voicing.
+          </p>
+        </header>
 
         <SavedLibrary
           onRestoreVoicing={restoreSavedVoicing}
@@ -2373,7 +2382,6 @@ async function handleSaveProgression() {
                           {playingKey === r.key ? "■" : "▶"}
                         </PlaybackControl>
                         <label className="vl-bass-order">
-                          <span>Bass</span>
                           <select
                             aria-label="Bass order"
                             value={bassOrder}

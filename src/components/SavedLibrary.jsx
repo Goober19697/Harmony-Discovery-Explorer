@@ -389,7 +389,7 @@ export default function SavedLibrary({
                   <div className="vl-library-meta">
                     {displayVoicingContext(voicing.emotion) || "Uncategorized"}
                   </div>
-                  <div className="vl-library-card-actions">
+                  <div className="vl-library-card-actions vl-single-voicing-actions">
                     <PlaybackControl
                       className="vl-row-apply"
                       onClick={() => playVoicing(voicing)}
