@@ -1361,7 +1361,9 @@ function HarmonyDiscoveryExplorer() {
         .vl-row-apply {
           flex-shrink: 0; background: transparent; border: 1px solid var(--hair);
           color: var(--ink-dim); font-family: 'JetBrains Mono', monospace; font-size: 11px;
-          padding: 7px 10px; border-radius: 6px; cursor: pointer;
+          height: 32px; padding: 0 10px; border-radius: 6px; cursor: pointer;
+          display: inline-flex; align-items: center; justify-content: center;
+          line-height: 1; white-space: nowrap;
         }
         .vl-row-apply:hover { border-color: var(--brass); color: var(--ink); }
         .vl-play-btn {
@@ -1383,6 +1385,8 @@ function HarmonyDiscoveryExplorer() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
+          width: max-content;
+          min-width: 38px;
           gap: 2px;
         }
         .vl-play-label {
@@ -1426,6 +1430,8 @@ function HarmonyDiscoveryExplorer() {
         }
         .vl-mode-toggle {
           display: inline-flex;
+          height: 32px;
+          align-items: stretch;
           border: 1px solid var(--hair);
           border-radius: 999px;
           overflow: hidden;
@@ -1434,7 +1440,8 @@ function HarmonyDiscoveryExplorer() {
         .vl-mode-btn {
           font-family: 'JetBrains Mono', monospace;
           font-size: 10.5px;
-          padding: 5px 10px;
+          min-height: 30px;
+          padding: 0 10px;
           background: transparent;
           border: none;
           color: var(--ink-dim);
@@ -1646,7 +1653,6 @@ function HarmonyDiscoveryExplorer() {
               >
                 {trailPlayingIdx !== null ? "■" : "▶"}
               </button>
-              <span className="vl-play-label">Tap</span>
             </div>
             <div className="vl-mode-toggle">
               {[["hold","Hold"],["hit","Hit"],["arp","Arp"],["mix-ha","Hold·Arp"],["mix-ah","Arp·Hold"]].map(([v, l]) => (

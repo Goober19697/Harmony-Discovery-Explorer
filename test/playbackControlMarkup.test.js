@@ -11,7 +11,11 @@ test("the shared playback control places an instructional Tap label beneath its 
 
   assert.match(source, /className="vl-play-group"/);
   assert.match(source, /<button[\s\S]*aria-label=\{ariaLabel\}[\s\S]*\{children\}[\s\S]*<\/button>/);
-  assert.match(source, /<span className="vl-play-label" aria-hidden="true">Tap<\/span>/);
+  assert.match(source, /showTapLabel = true/);
+  assert.match(
+    source,
+    /\{showTapLabel && \(\s*<span className="vl-play-label" aria-hidden="true">Tap<\/span>\s*\)\}/,
+  );
 });
 
 test("all application voicing and progression playback controls use the shared control", async () => {
@@ -22,6 +26,16 @@ test("all application voicing and progression playback controls use the shared c
 
   assert.equal((explorer.match(/<PlaybackControl/g) || []).length, 6);
   assert.equal((library.match(/<PlaybackControl/g) || []).length, 2);
+  assert.equal((explorer.match(/showTapLabel=\{false\}/g) || []).length, 1);
+  assert.equal((library.match(/showTapLabel=\{false\}/g) || []).length, 1);
+  assert.match(
+    explorer,
+    /onClick=\{playProgression\}[\s\S]*?showTapLabel=\{false\}/,
+  );
+  assert.match(
+    library,
+    /onClick=\{\(\) => playProgression\(saved\)\}[\s\S]*?showTapLabel=\{false\}/,
+  );
   assert.doesNotMatch(explorer, /<button[^>]*className="vl-play-btn"/s);
   assert.doesNotMatch(library, /<button[\s\S]{0,200}aria-label=\{`Play /);
 });

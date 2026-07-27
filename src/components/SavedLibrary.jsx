@@ -501,6 +501,7 @@ export default function SavedLibrary({
                         onClick={() => playProgression(saved)}
                         disabled={playingProgressionId !== null}
                         ariaLabel={`Play progression ${saved.title || "Untitled Progression"}`}
+                        showTapLabel={false}
                       >
                         {playingProgressionId === saved.id ? "Playing…" : "▶ Play Progression"}
                       </PlaybackControl>

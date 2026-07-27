@@ -1450,7 +1450,9 @@ async function handleSaveProgression() {
         .vl-row-apply {
           flex-shrink: 0; background: transparent; border: 1px solid var(--hair);
           color: var(--ink-dim); font-family: 'JetBrains Mono', monospace; font-size: 11px;
-          padding: 7px 10px; border-radius: 6px; cursor: pointer;
+          height: 32px; padding: 0 10px; border-radius: 6px; cursor: pointer;
+          display: inline-flex; align-items: center; justify-content: center;
+          line-height: 1; white-space: nowrap;
         }
         .vl-row-apply:hover { border-color: var(--brass); color: var(--ink); }
         .vl-row-apply:disabled { opacity: 0.4; cursor: not-allowed; border-color: var(--hair); color: var(--ink-dim); }
@@ -1472,7 +1474,8 @@ async function handleSaveProgression() {
           color: var(--ink-dim);
           font-family: 'JetBrains Mono', monospace;
           font-size: 10px;
-          padding: 6px 5px;
+          height: 32px;
+          padding: 0 24px 0 7px;
           cursor: pointer;
         }
         .vl-bass-order select:hover { border-color: var(--brass); color: var(--ink); }
@@ -1495,6 +1498,8 @@ async function handleSaveProgression() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
+          width: max-content;
+          min-width: 38px;
           gap: 2px;
         }
         .vl-play-label {
@@ -1538,6 +1543,8 @@ async function handleSaveProgression() {
         }
         .vl-mode-toggle {
           display: inline-flex;
+          height: 32px;
+          align-items: stretch;
           border: 1px solid var(--hair);
           border-radius: 999px;
           overflow: hidden;
@@ -1546,7 +1553,8 @@ async function handleSaveProgression() {
         .vl-mode-btn {
           font-family: 'JetBrains Mono', monospace;
           font-size: 10.5px;
-          padding: 5px 10px;
+          min-height: 30px;
+          padding: 0 10px;
           background: transparent;
           border: none;
           color: var(--ink-dim);
@@ -1712,7 +1720,9 @@ async function handleSaveProgression() {
         .vl-library-favorite:focus-visible {
           outline: 2px solid var(--brass); outline-offset: 1px;
         }
-        .vl-library-card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .vl-library-card-actions {
+          display: flex; align-items: flex-start; flex-wrap: wrap; gap: 8px;
+        }
         .vl-library-card-actions .vl-row-apply:disabled {
           cursor: wait; opacity: 0.6;
         }
@@ -1950,6 +1960,7 @@ async function handleSaveProgression() {
               onClick={playProgression}
               ariaLabel={trailPlayingIdx !== null ? "Stop progression" : "Play progression"}
               title={trailPlayingIdx !== null ? "Stop progression" : "Play progression"}
+              showTapLabel={false}
             >
               {trailPlayingIdx !== null ? "■" : "▶"}
             </PlaybackControl>
@@ -2346,11 +2357,9 @@ async function handleSaveProgression() {
                       >
                         Next
                       </button>
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-                        <button className="vl-row-apply" onClick={() => applyResult(r)}>
-                          Add it →
-                        </button>
-                      </div>
+                      <button className="vl-row-apply" onClick={() => applyResult(r)}>
+                        Add it →
+                      </button>
                     </div>
                     <div className="vl-piano-wrap">
                       <PianoKeys

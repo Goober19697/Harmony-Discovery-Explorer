@@ -7,6 +7,7 @@ export default function PlaybackControl({
   ariaLabel,
   title,
   disabled = false,
+  showTapLabel = true,
 }) {
   return (
     <div className="vl-play-group">
@@ -20,7 +21,9 @@ export default function PlaybackControl({
       >
         {children}
       </button>
-      <span className="vl-play-label" aria-hidden="true">Tap</span>
+      {showTapLabel && (
+        <span className="vl-play-label" aria-hidden="true">Tap</span>
+      )}
     </div>
   );
 }
