@@ -2100,11 +2100,6 @@ async function handleSaveProgression() {
                           {negativeHarmonySaving ? "Saving…" : "Save"}
                         </button>
                       </div>
-                      {derivedNegativeIntervalQualities && (
-                        <div className="vl-current-aliases">
-                          Interval qualities: {derivedNegativeIntervalQualities}
-                        </div>
-                      )}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <span className="vl-current-notes">

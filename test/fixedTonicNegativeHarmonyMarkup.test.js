@@ -24,14 +24,11 @@ test("the piano and existing analyzer receive the transformed MIDI sequence", as
   assert.match(source, /<PianoKeys\s+midis=\{derivedNegativeNotes\}/s);
 });
 
-test("the Negative Harmony result displays chord name and interval qualities", async () => {
+test("the Negative Harmony result displays its analyzed chord name without an interval subtitle", async () => {
   const source = await readFile(explorerUrl, "utf8");
 
   assert.match(source, /\{derivedNegativeLabel \|\| "Custom voicing"\}/);
-  assert.match(
-    source,
-    /Interval qualities: \{derivedNegativeIntervalQualities\}/,
-  );
+  assert.doesNotMatch(source, /Interval qualities: \{derivedNegativeIntervalQualities\}/);
 });
 
 test("invalid analyzed chord roots disable Negative Harmony without an F fallback", async () => {
