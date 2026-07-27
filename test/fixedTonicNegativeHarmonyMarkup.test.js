@@ -33,13 +33,13 @@ test("each Negative Harmony result displays its interpretation and analysis", as
   assert.match(source, /Interval qualities: \{result\.intervalQualities\}/);
 });
 
-test("unsupported functional interpretations disable Negative Harmony without guessing", async () => {
+test("only analyses without a recognized root disable Negative Harmony", async () => {
   const source = await readFile(explorerUrl, "utf8");
 
   assert.match(source, /disabled=\{!hasNegativeHarmonyResults\}/);
   assert.match(
     source,
-    /No standard functional Negative Harmony interpretation is available\./,
+    /Negative Harmony requires a recognized chord root\./,
   );
   assert.doesNotMatch(source, /fixed tonic F/i);
 });

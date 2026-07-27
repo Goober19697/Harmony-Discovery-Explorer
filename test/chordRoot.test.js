@@ -12,6 +12,10 @@ test("chord roots are extracted with common suffixes and accidentals", () => {
   assert.deepEqual(chordRootFromName("Ebmin11"), { name: "Eb", pitchClass: 3 });
   assert.deepEqual(chordRootFromName("F♯m7b5"), { name: "F♯", pitchClass: 6 });
   assert.deepEqual(chordRootFromName("B♭13"), { name: "B♭", pitchClass: 10 });
+  assert.deepEqual(chordRootFromName("C#maj7#5"), { name: "C#", pitchClass: 1 });
+  assert.deepEqual(chordRootFromName("Dbmaj9#5"), { name: "Db", pitchClass: 1 });
+  assert.deepEqual(chordRootFromName("Abmaj11#5"), { name: "Ab", pitchClass: 8 });
+  assert.deepEqual(chordRootFromName("Fmaj13#5"), { name: "F", pitchClass: 5 });
 });
 
 test("slash chords use the chord root rather than the bass note", () => {

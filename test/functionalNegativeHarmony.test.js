@@ -79,11 +79,49 @@ test("diminished and half-diminished roots produce vii only", () => {
   assert.equal(halfDiminished.explanation, "Bm7b5 interpreted as viiø7 of C");
 });
 
-test("unsupported qualities do not produce standard interpretations", () => {
-  for (const quality of ["mMaj7", "mMaj11", "aug maj7", "aug", "(9,3,♭13)"]) {
-    assert.deepEqual(interpretations(`C${quality}`, "C", 0, quality), []);
+test("recognized qualities without standard functions use their root as a reference", () => {
+  for (const [name, root, pitchClass, quality] of [
+    ["CmMaj7", "C", 0, "mMaj7"],
+    ["CmMaj9", "C", 0, "mMaj9"],
+    ["FmMaj11", "F", 5, "mMaj11"],
+    ["BbmMaj11", "Bb", 10, "mMaj11"],
+    ["CmMaj13", "C", 0, "mMaj13"],
+    ["CminMaj7", "C", 0, "minMaj7"],
+    ["CminMaj9", "C", 0, "minMaj9"],
+    ["CminMaj11", "C", 0, "minMaj11"],
+    ["CminMaj13", "C", 0, "minMaj13"],
+    ["Caug", "C", 0, "aug"],
+    ["Csus4", "C", 0, "sus4"],
+    ["C(9,3,♭13)", "C", 0, "(9,3,♭13)"],
+  ]) {
+    const results = interpretations(name, root, pitchClass, quality);
+    assert.equal(results.length, 1);
+    assert.deepEqual(results[0], {
+      interpretationType: "root-reference",
+      sourceChordName: name,
+      sourceChordRoot: root,
+      sourceQuality: "other",
+      functionDegree: null,
+      romanNumeral: null,
+      impliedTonicName: root,
+      impliedTonicPitchClass: pitchClass,
+      explanation: `${name} referenced to ${root}`,
+    });
   }
+});
+
+test("root-reference fallback uses the chord root before a slash", () => {
+  const results = interpretations("CmMaj7/G", "C", 0, "mMaj7");
+  assert.equal(results.length, 1);
+  assert.equal(results[0].impliedTonicName, "C");
+  assert.equal(results[0].impliedTonicPitchClass, 0);
+  assert.equal(results[0].explanation, "CmMaj7/G referenced to C");
+});
+
+test("unrecognized analyses do not receive a fallback tonic", () => {
   assert.deepEqual(interpretations("Custom Voicing", "", 0, ""), []);
+  assert.deepEqual(interpretations("Unknown", "", 5, ""), []);
+  assert.deepEqual(interpretations("", "F", 5, ""), []);
 });
 
 test("interpretations preserve analyzed minor casing and accidental spelling", () => {

@@ -18,6 +18,7 @@ function interpretation(
   const impliedTonicPitchClass = pitchClass(tonicPitchClass);
   const impliedTonicName = TONIC_NAMES[impliedTonicPitchClass];
   return {
+    interpretationType: "functional",
     sourceChordName,
     sourceChordRoot,
     sourceQuality,
@@ -26,6 +27,25 @@ function interpretation(
     impliedTonicName,
     impliedTonicPitchClass,
     explanation: `${sourceChordName} interpreted as ${romanNumeral} of ${impliedTonicName}`,
+  };
+}
+
+function rootReferenceInterpretation(
+  sourceChordName,
+  sourceChordRoot,
+  tonicPitchClass,
+) {
+  const impliedTonicPitchClass = pitchClass(tonicPitchClass);
+  return {
+    interpretationType: "root-reference",
+    sourceChordName,
+    sourceChordRoot,
+    sourceQuality: "other",
+    functionDegree: null,
+    romanNumeral: null,
+    impliedTonicName: sourceChordRoot,
+    impliedTonicPitchClass,
+    explanation: `${sourceChordName} referenced to ${sourceChordRoot}`,
   };
 }
 
@@ -109,6 +129,12 @@ export function functionalNegativeHarmonyInterpretations({
     case "half-diminished":
       return [make(7, "viiø7", root + 1)];
     default:
-      return [];
+      return [
+        rootReferenceInterpretation(
+          sourceChordName.trim(),
+          sourceChordRoot.trim(),
+          root,
+        ),
+      ];
   }
 }

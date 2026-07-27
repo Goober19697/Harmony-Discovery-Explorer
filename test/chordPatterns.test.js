@@ -72,6 +72,32 @@ test("ordinary chord families retain their identities", () => {
   }
 });
 
+test("augmented major-family chords use major-extension sharp-five notation", () => {
+  const examples = [
+    ["C# E# A C", "C#maj7#5"],
+    ["C# E# A C D#", "C#maj9#5"],
+    ["C# E# A C D# F#", "C#maj11#5"],
+    ["C# E# A C D# F# A#", "C#maj13#5"],
+  ];
+
+  for (const [notes, expected] of examples) {
+    assert.equal(label(notes), expected, notes);
+  }
+
+  assert.equal(label("C# E# A"), "C#aug");
+  assert.equal(label("C# E# A B"), "C#7#5");
+  assert.equal(label("C# E# A B D#"), "C#9#5");
+  assert.equal(label("C# E# A B D# A#"), "C#13#5");
+});
+
+test("augmented major-family names preserve the selected root spelling", () => {
+  const flatNames = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+  const notes = parseVoicing("Db F A C Eb").midis;
+
+  assert.equal(chordLabel(notes, flatNames), "Dbmaj9#5");
+  assert.doesNotMatch(chordLabel(notes, flatNames), /aug(?:\\s*)maj|\\+maj/);
+});
+
 test("extended eleventh and thirteenth voicings are recognized", () => {
   const examples = [
     ["C Eb G Bb D F", "Cm11"],

@@ -189,7 +189,9 @@ const SUFFIX_CATEGORY = {
   "7":        "tense",
   "7sus":     "tense",
   "9":        "tense",
+  "9#5":      "tense",
   "13":       "tense",
+  "13#5":     "tense",
   "7b5":      "tense",
   "7#5":      "tense",
   "7b9":      "tense",
@@ -206,7 +208,10 @@ const SUFFIX_CATEGORY = {
   "sus2":     "dreamy",
   "sus4":     "dreamy",
   "aug":      "dreamy",
-  "aug maj7": "dreamy",
+  "maj7#5":   "dreamy",
+  "maj9#5":   "dreamy",
+  "maj11#5":  "dreamy",
+  "maj13#5":  "dreamy",
   "maj7♯11":  "dreamy",
   "7♯11":     "dreamy",
   "mMaj7":     "dreamy",
@@ -241,7 +246,10 @@ const QUALITY_MOOD = {
   "mMaj11":    "uneasy beauty, noir",
   "mMaj13":    "uneasy beauty, noir",
   "mMaj7(add13)":"uneasy beauty, noir",
-  "aug maj7": "surreal shimmer",
+  "maj7#5":   "surreal shimmer",
+  "maj9#5":   "surreal shimmer",
+  "maj11#5":  "surreal shimmer",
+  "maj13#5":  "surreal shimmer",
   "6/9":      "plush, contented",
   "6/9♯11":   "luminous, open-ended",
   "m6/9":     "smoky, after-hours",
@@ -249,10 +257,12 @@ const QUALITY_MOOD = {
   "maj13":    "radiant, richly at rest",
   "maj13♯11": "radiant, limitless wonder",
   "9":        "confident swagger",
+  "9#5":      "restless, augmented pull",
   "m9":       "melancholy velvet",
   "m11":      "deep, contemplative",
   "m13":      "soulful, spacious melancholy",
   "13":       "rich, soulful momentum",
+  "13#5":     "rich, augmented momentum",
   "7b5":      "lean, unsettled pull",
   "7#5":      "restless, augmented pull",
   "7b9":      "dark urgency",
@@ -737,7 +747,7 @@ async function handleSaveProgression() {
       );
       const chordName = labelForAnalysis(analysis, useResultFlats);
       const intervalQualities = intervalQualitiesForAnalysis(analysis);
-      const id = `${interpretation.functionDegree}-${interpretation.impliedTonicPitchClass}`;
+      const id = `${interpretation.interpretationType}-${interpretation.functionDegree ?? "root"}-${interpretation.impliedTonicPitchClass}`;
       return {
         ...interpretation,
         id,
@@ -2140,7 +2150,7 @@ async function handleSaveProgression() {
               </div>
               {!hasNegativeHarmonyResults && (
                 <div className="vl-current-aliases">
-                  No standard functional Negative Harmony interpretation is available.
+                  Negative Harmony requires a recognized chord root.
                 </div>
               )}
               <div className="vl-piano-wrap">
