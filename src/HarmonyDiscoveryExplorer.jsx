@@ -34,6 +34,7 @@ import {
 } from "./chordPatterns.js";
 import { checkBackendHealth, saveProgression, saveVoicing } from "./services/api";
 import SavedLibrary from "./components/SavedLibrary.jsx";
+import PlaybackControl from "./components/PlaybackControl.jsx";
 import { useAuth } from "./auth/AuthContext.jsx";
 import {
   normalizeProgressionTitle,
@@ -640,8 +641,9 @@ async function handleSaveProgression() {
   const BEAT_MS = (60 / bpm) * 1000;
   const CHORD_MS = BEAT_MS * 8; // 2 measures of 4/4
 
-  async function playChord(midis, rowKey) {
+  async function playVoicing(midis, rowKey) {
     try {
+      stopTrail();
       await unlockAudio();
       const synth = await ensureSynth();
       synth.releaseAll();
@@ -667,29 +669,10 @@ async function handleSaveProgression() {
     }
   }
 
-  async function playTransition(fromMidis, toMidis, rowKey) {
-    try {
-      await unlockAudio();
-      const synth = await ensureSynth();
-      synth.releaseAll();
-      setAudioError(null);
-      setPlayingKey(rowKey);
-      synth.triggerAttackRelease(fromMidis.map(freq), (CHORD_MS / 1000) * 0.97);
-      const t = setTimeout(() => {
-        synth.releaseAll();
-        synth.triggerAttackRelease(toMidis.map(freq), (CHORD_MS / 1000) * 0.97);
-      }, CHORD_MS);
-      setTimeout(() => setPlayingKey(k => (k === rowKey ? null : k)), CHORD_MS * 2);
-    } catch (err) {
-      console.error(err);
-      setAudioError("Audio couldn't start. Tap the play button again, or check your device isn't muted.");
-    }
-  }
-
   async function playSavedVoicing(saved) {
     const notes = savedVoicingMidis(saved);
     if (!notes.length) throw new Error("This saved voicing does not contain playable notes.");
-    await playChord(notes, `saved-voicing-${saved.id}`);
+    await playVoicing(notes, `saved-voicing-${saved.id}`);
     await new Promise(resolve => setTimeout(resolve, CHORD_MS));
   }
 
@@ -780,7 +763,7 @@ async function handleSaveProgression() {
 
   const [trailMode, setTrailMode] = useState("hold"); // 'hold' | 'hit' | 'arp'
 
-  async function playTrail() {
+  async function playProgression() {
     if (trailPlayingIdx !== null) { stopTrail(); return; }
     try {
       await unlockAudio();
@@ -1962,17 +1945,14 @@ async function handleSaveProgression() {
 
         {history.length > 1 && (
           <div className="vl-trail">
-            <div className="vl-play-group">
-              <button
-                type="button"
-                className={"vl-play-btn vl-trail-play" + (trailPlayingIdx !== null ? " playing" : "")}
-                onClick={playTrail}
-                aria-label={trailPlayingIdx !== null ? "Stop progression" : "Play progression"}
-                title={trailPlayingIdx !== null ? "Stop progression" : "Play progression"}
-              >
-                {trailPlayingIdx !== null ? "■" : "▶"}
-              </button>
-            </div>
+            <PlaybackControl
+              className={"vl-play-btn vl-trail-play" + (trailPlayingIdx !== null ? " playing" : "")}
+              onClick={playProgression}
+              ariaLabel={trailPlayingIdx !== null ? "Stop progression" : "Play progression"}
+              title={trailPlayingIdx !== null ? "Stop progression" : "Play progression"}
+            >
+              {trailPlayingIdx !== null ? "■" : "▶"}
+            </PlaybackControl>
             <div className="vl-mode-toggle">
               {[["hold","Hold"],["hit","Hit"],["arp","Arp"],["mix-ha","Hold·Arp"],["mix-ah","Arp·Hold"]].map(([v, l]) => (
                 <button
@@ -2063,17 +2043,12 @@ async function handleSaveProgression() {
                 <PianoKeys midis={notes} flats={key.flats} onNotePlay={playPianoNote} />
               </div>
               <div className="vl-inspect-actions">
-                <div className="vl-play-group">
-                  <button
-                    type="button"
-                    className="vl-play-btn"
-                    onClick={() => playChord(notes, "inspect-" + inspectedIdx)}
-                    aria-label="Play this chord"
-                  >
-                    {playingKey === "inspect-" + inspectedIdx ? "■" : "▶"}
-                  </button>
-                  <span className="vl-play-label">Tap</span>
-                </div>
+                <PlaybackControl
+                  onClick={() => playVoicing(notes, "inspect-" + inspectedIdx)}
+                  ariaLabel="Play this chord"
+                >
+                  {playingKey === "inspect-" + inspectedIdx ? "■" : "▶"}
+                </PlaybackControl>
                 {history.length > 1 && (
                   <button
                     type="button"
@@ -2145,16 +2120,12 @@ async function handleSaveProgression() {
                   >
                     Show Negative Harmony
                   </button>
-                  <div className="vl-play-group">
-                    <button
-                      className="vl-play-btn"
-                      onClick={() => playChord(currentNotes, "current")}
-                      aria-label="Play current voicing"
-                      type="button"
-                    >
-                      {playingKey === "current" ? "■" : "▶"}
-                    </button>
-                  </div>
+                  <PlaybackControl
+                    onClick={() => playVoicing(currentNotes, "current")}
+                    ariaLabel="Play current voicing"
+                  >
+                    {playingKey === "current" ? "■" : "▶"}
+                  </PlaybackControl>
                 </div>
               </div>
               {!hasNegativeHarmonyResults && (
@@ -2200,16 +2171,12 @@ async function handleSaveProgression() {
                       <span className="vl-current-notes">
                         {negativeNotes.map(m => midiToName(m, negativeUsesFlats)).join(" · ")}
                       </span>
-                      <div className="vl-play-group">
-                        <button
-                          className="vl-play-btn"
-                          onClick={() => playChord(negativeNotes, "negative")}
-                          aria-label="Play shadow voicing"
-                          type="button"
-                        >
-                          {playingKey === "negative" ? "■" : "▶"}
-                        </button>
-                      </div>
+                      <PlaybackControl
+                        onClick={() => playVoicing(negativeNotes, "negative")}
+                        ariaLabel="Play shadow voicing"
+                      >
+                        {playingKey === "negative" ? "■" : "▶"}
+                      </PlaybackControl>
                       <button
                         className="vl-row-apply"
                         type="button"
@@ -2256,16 +2223,12 @@ async function handleSaveProgression() {
                             .map(m => midiToName(m, result.useFlats))
                             .join(" · ")}
                         </span>
-                        <div className="vl-play-group">
-                          <button
-                            className="vl-play-btn"
-                            onClick={() => playChord(result.notes, `derived-negative-${result.id}`)}
-                            aria-label={`Play ${result.explanation}`}
-                            type="button"
-                          >
-                            {playingKey === `derived-negative-${result.id}` ? "■" : "▶"}
-                          </button>
-                        </div>
+                        <PlaybackControl
+                          onClick={() => playVoicing(result.notes, `derived-negative-${result.id}`)}
+                          ariaLabel={`Play ${result.explanation}`}
+                        >
+                          {playingKey === `derived-negative-${result.id}` ? "■" : "▶"}
+                        </PlaybackControl>
                         <button
                           className="vl-row-apply"
                           type="button"
@@ -2348,17 +2311,12 @@ async function handleSaveProgression() {
                           );
                         })}
                       </div>
-                      <div className="vl-play-group">
-                        <button
-                          className="vl-play-btn"
-                          onClick={() => playTransition(currentNotes, selectedNotes, r.key)}
-                          aria-label={"Play move to " + r.name}
-                          type="button"
-                        >
-                          {playingKey === r.key ? "■" : "▶"}
-                        </button>
-                        <span className="vl-play-label">Tap</span>
-                      </div>
+                      <PlaybackControl
+                        onClick={() => playVoicing(selectedNotes, r.key)}
+                        ariaLabel={"Play move to " + r.name}
+                      >
+                        {playingKey === r.key ? "■" : "▶"}
+                      </PlaybackControl>
                       <label className="vl-bass-order">
                         <span>Bass</span>
                         <select

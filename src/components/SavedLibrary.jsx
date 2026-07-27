@@ -9,6 +9,7 @@ import {
   updateVoicing,
 } from "../services/api.js";
 import { formatOrderedNotes } from "../noteParsing.js";
+import PlaybackControl from "./PlaybackControl.jsx";
 import {
   replaceSavedProgression,
   savedProgressionDisplaySteps,
@@ -389,15 +390,14 @@ export default function SavedLibrary({
                     {displayVoicingContext(voicing.emotion) || "Uncategorized"}
                   </div>
                   <div className="vl-library-card-actions">
-                    <button
+                    <PlaybackControl
                       className="vl-row-apply"
-                      type="button"
                       onClick={() => playVoicing(voicing)}
                       disabled={playingVoicingId !== null}
-                      aria-label={`Play ${voicing.chord_name || "custom"} voicing`}
+                      ariaLabel={`Play ${voicing.chord_name || "custom"} voicing`}
                     >
                       {playingVoicingId === voicing.id ? "Playing…" : "▶ Play"}
-                    </button>
+                    </PlaybackControl>
                     <button className="vl-row-apply" type="button" onClick={() => onRestoreVoicing(voicing)}>
                       Restore
                     </button>
@@ -496,15 +496,14 @@ export default function SavedLibrary({
                       ))}
                     </div>
                     <div className="vl-library-card-actions">
-                      <button
+                      <PlaybackControl
                         className="vl-row-apply"
-                        type="button"
                         onClick={() => playProgression(saved)}
                         disabled={playingProgressionId !== null}
-                        aria-label={`Play progression ${saved.title || "Untitled Progression"}`}
+                        ariaLabel={`Play progression ${saved.title || "Untitled Progression"}`}
                       >
                         {playingProgressionId === saved.id ? "Playing…" : "▶ Play Progression"}
-                      </button>
+                      </PlaybackControl>
                       <button className="vl-row-apply" type="button" onClick={() => onRestoreProgression(saved)}>
                         Restore Progression
                       </button>

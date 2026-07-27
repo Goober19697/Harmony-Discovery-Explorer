@@ -759,8 +759,9 @@ function HarmonyDiscoveryExplorer() {
   const BEAT_MS = (60 / bpm) * 1000;
   const CHORD_MS = BEAT_MS * 8; // 2 measures of 4/4
 
-  async function playChord(midis, rowKey) {
+  async function playVoicing(midis, rowKey) {
     try {
+      stopTrail();
       await unlockAudio();
       const synth = await ensureSynth();
       synth.releaseAll();
@@ -783,25 +784,6 @@ function HarmonyDiscoveryExplorer() {
     } catch (err) {
       console.error(err);
       setAudioError("Audio couldn't start. Tap the key again, or check your device isn't muted.");
-    }
-  }
-
-  async function playTransition(fromMidis, toMidis, rowKey) {
-    try {
-      await unlockAudio();
-      const synth = await ensureSynth();
-      synth.releaseAll();
-      setAudioError(null);
-      setPlayingKey(rowKey);
-      synth.triggerAttackRelease(fromMidis.map(freq), (CHORD_MS / 1000) * 0.97);
-      const t = setTimeout(() => {
-        synth.releaseAll();
-        synth.triggerAttackRelease(toMidis.map(freq), (CHORD_MS / 1000) * 0.97);
-      }, CHORD_MS);
-      setTimeout(() => setPlayingKey(k => (k === rowKey ? null : k)), CHORD_MS * 2);
-    } catch (err) {
-      console.error(err);
-      setAudioError("Audio couldn't start. Tap the play button again, or check your device isn't muted.");
     }
   }
 
@@ -858,7 +840,7 @@ function HarmonyDiscoveryExplorer() {
 
   const [trailMode, setTrailMode] = useState("hold"); // 'hold' | 'hit' | 'arp'
 
-  async function playTrail() {
+  async function playProgression() {
     if (trailPlayingIdx !== null) { stopTrail(); return; }
     try {
       await unlockAudio();
@@ -1658,7 +1640,7 @@ function HarmonyDiscoveryExplorer() {
               <button
                 type="button"
                 className={"vl-play-btn vl-trail-play" + (trailPlayingIdx !== null ? " playing" : "")}
-                onClick={playTrail}
+                onClick={playProgression}
                 aria-label={trailPlayingIdx !== null ? "Stop progression" : "Play progression"}
                 title={trailPlayingIdx !== null ? "Stop progression" : "Play progression"}
               >
@@ -1735,7 +1717,7 @@ function HarmonyDiscoveryExplorer() {
                   <button
                     type="button"
                     className="vl-play-btn"
-                    onClick={() => playChord(notes, "inspect-" + inspectedIdx)}
+                    onClick={() => playVoicing(notes, "inspect-" + inspectedIdx)}
                     aria-label="Play this chord"
                   >
                     {playingKey === "inspect-" + inspectedIdx ? "■" : "▶"}
@@ -1800,12 +1782,13 @@ function HarmonyDiscoveryExplorer() {
                   <div className="vl-play-group">
                     <button
                       className="vl-play-btn"
-                      onClick={() => playChord(currentNotes, "current")}
+                      onClick={() => playVoicing(currentNotes, "current")}
                       aria-label="Play current voicing"
                       type="button"
                     >
                       {playingKey === "current" ? "■" : "▶"}
                     </button>
+                    <span className="vl-play-label" aria-hidden="true">Tap</span>
                   </div>
                 </div>
               </div>
@@ -1835,12 +1818,13 @@ function HarmonyDiscoveryExplorer() {
                       <div className="vl-play-group">
                         <button
                           className="vl-play-btn"
-                          onClick={() => playChord(negativeNotes, "negative")}
+                          onClick={() => playVoicing(negativeNotes, "negative")}
                           aria-label="Play shadow voicing"
                           type="button"
                         >
                           {playingKey === "negative" ? "■" : "▶"}
                         </button>
+                        <span className="vl-play-label" aria-hidden="true">Tap</span>
                       </div>
                       <button
                         className="vl-row-apply"
@@ -1880,12 +1864,13 @@ function HarmonyDiscoveryExplorer() {
                       <div className="vl-play-group">
                         <button
                           className="vl-play-btn"
-                          onClick={() => playChord(derivedNegativeNotes, "derived-negative")}
+                          onClick={() => playVoicing(derivedNegativeNotes, "derived-negative")}
                           aria-label="Play Negative Harmony voicing"
                           type="button"
                         >
                           {playingKey === "derived-negative" ? "■" : "▶"}
                         </button>
+                        <span className="vl-play-label" aria-hidden="true">Tap</span>
                       </div>
                     </div>
                   </div>
@@ -1960,7 +1945,7 @@ function HarmonyDiscoveryExplorer() {
                       <div className="vl-play-group">
                         <button
                           className="vl-play-btn"
-                          onClick={() => playTransition(currentNotes, r.targets.map(t => t.to), r.key)}
+                          onClick={() => playVoicing(r.targets.map(t => t.to), r.key)}
                           aria-label={"Play move to " + r.name}
                           type="button"
                         >

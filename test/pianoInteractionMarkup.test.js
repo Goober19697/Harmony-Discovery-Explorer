@@ -36,7 +36,7 @@ test("every rendered shared piano receives the existing note-play callback", asy
 test("single-note playback reuses the existing synth without stopping chord playback", async () => {
   const source = await readFile(explorerUrl, "utf8");
   const functionSource = source.match(
-    /async function playPianoNote\(midi\) \{([\s\S]*?)\n  \}\n\n  async function playTransition/,
+    /async function playPianoNote\(midi\) \{([\s\S]*?)\n  \}\n\n  async function playSavedVoicing/,
   )?.[1];
 
   assert.ok(functionSource);
@@ -44,7 +44,7 @@ test("single-note playback reuses the existing synth without stopping chord play
   assert.match(functionSource, /await ensureSynth\(\)/);
   assert.match(functionSource, /synth\.triggerAttackRelease\(freq\(midi\), 1\.2\)/);
   assert.doesNotMatch(functionSource, /releaseAll/);
-  assert.match(source, /async function playChord\(midis, rowKey\)/);
+  assert.match(source, /async function playVoicing\(midis, rowKey\)/);
 });
 
 test("pressed styling is transient and preserves the voicing fill colors", async () => {
