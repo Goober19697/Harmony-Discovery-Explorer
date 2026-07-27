@@ -1418,6 +1418,14 @@ async function handleSaveProgression() {
           align-items: center;
           gap: 14px;
         }
+        .vl-row > .vl-play-group {
+          align-self: flex-start;
+          margin-top: 13px;
+        }
+        .vl-row > .vl-row-apply {
+          align-self: flex-start;
+          margin-top: 12px;
+        }
         .vl-row-name { width: 148px; flex-shrink: 0; }
         .vl-row-chord {
           font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px;
@@ -2110,7 +2118,7 @@ async function handleSaveProgression() {
                     </div>
                   )}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
                   <span className="vl-current-notes">
                     {currentNotes.map(m => midiToName(m, key.flats)).join(" · ")}
                   </span>
@@ -2178,7 +2186,7 @@ async function handleSaveProgression() {
                         Save
                       </button>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                       <span className="vl-current-notes">
                         {negativeNotes.map(m => midiToName(m, negativeUsesFlats)).join(" · ")}
                       </span>
@@ -2228,7 +2236,7 @@ async function handleSaveProgression() {
                           {isSaving ? "Saving…" : "Save"}
                         </button>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                         <span className="vl-current-notes">
                           {result.notes
                             .map(m => midiToName(m, result.useFlats))
