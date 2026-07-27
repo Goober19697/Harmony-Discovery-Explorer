@@ -1,6 +1,6 @@
 # Harmony Discovery Explorer
 
-Explore chord voicings, Shadow Voicing transformations, and harmonic progressions through an interactive full-stack web application.
+Explore piano chord voicings, Shadow Voicing transformations, and harmonic progressions through an interactive full-stack web application.
 
 <p align="center">
   <img src="docs/hero4.png" alt="Harmony Discovery Explorer Interface" width="90%">
