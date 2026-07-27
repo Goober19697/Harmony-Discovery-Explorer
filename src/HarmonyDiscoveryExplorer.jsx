@@ -15,6 +15,7 @@ import {
   negativeHarmonySourceDescription,
   negativeHarmonyUsesFlats,
 } from "./negativeHarmony.js";
+import { fixedTonicNegativeHarmony } from "./fixedTonicNegativeHarmony.js";
 import {
   candidateNaming,
   candidateAt,
@@ -134,6 +135,12 @@ function labelsForNotes(midis, flats) {
   return analyzeVoicingOptions(midis).map(a =>
     names[a.rootPc] + a.suffix + (a.rootless ? " (rootless)" : "")
   );
+}
+
+function intervalQualitiesForAnalysis(analysis) {
+  if (!analysis) return null;
+  if (analysis.fallback) return analysis.suffix.slice(1, -1);
+  return analysis.suffix || "major";
 }
 
 function detectChord(midis) {
@@ -263,7 +270,11 @@ const WHITE_PCS = [0, 2, 4, 5, 7, 9, 11];
 // black key horizontal offset (in white-key units) within an octave, keyed by pc
 const BLACK_OFFSETS = { 1: 1, 3: 2, 6: 4, 8: 5, 10: 6 };
 
-function PianoKeys({ midis, flats = false }) {
+function PianoKeys({
+  midis,
+  flats = false,
+  ariaLabel = "Piano keyboard showing the current voicing",
+}) {
   if (!midis || midis.length === 0) return null;
   const pressed = new Set(midis);
   // range: full octaves spanning the voicing, minimum two octaves for looks
@@ -303,7 +314,7 @@ function PianoKeys({ midis, flats = false }) {
       width="100%"
       style={{ maxWidth: width, display: "block" }}
       role="img"
-      aria-label="Piano keyboard showing the current voicing"
+      aria-label={ariaLabel}
     >
       {whites.map(k => (
         <rect
@@ -353,6 +364,7 @@ export default function HarmonyDiscoveryExplorer() {
   const [playingKey, setPlayingKey] = useState(null);
   const [audioError, setAudioError] = useState(null);
   const [showNegativeHarmony, setShowNegativeHarmony] = useState(false);
+  const [showFixedNegativeHarmony, setShowFixedNegativeHarmony] = useState(false);
   const [bassOrder, setBassOrder] = useState("ascending");
   const [volume, setVolume] = useState(100); // 0-100
   const [backendStatus, setBackendStatus] = useState("Checking backend...");
@@ -601,6 +613,22 @@ async function handleSaveProgression() {
   const currentNotes = parsed && parsed.midis.length ? parsed.midis : null;
   const negativeNotes = useMemo(() => negativeHarmony(currentNotes), [currentNotes]);
   const negativeUsesFlats = useMemo(() => negativeHarmonyUsesFlats(negativeNotes), [negativeNotes]);
+  const fixedNegativeNotes = useMemo(
+    () => fixedTonicNegativeHarmony(currentNotes),
+    [currentNotes],
+  );
+  const fixedNegativeAnalysis = useMemo(
+    () => analyzeVoicing(fixedNegativeNotes),
+    [fixedNegativeNotes],
+  );
+  const fixedNegativeLabel = useMemo(
+    () => labelForNotes(fixedNegativeNotes, true),
+    [fixedNegativeNotes],
+  );
+  const fixedNegativeIntervalQualities = useMemo(
+    () => intervalQualitiesForAnalysis(fixedNegativeAnalysis),
+    [fixedNegativeAnalysis],
+  );
   const currentAnalysis = useMemo(() => analyzeVoicing(currentNotes), [currentNotes]);
   const useFlats = inferUseFlats(committedText, currentAnalysis?.rootPc);
   const key = useMemo(() => ({ flats: useFlats }), [useFlats]);
@@ -876,6 +904,7 @@ async function handleSaveProgression() {
   }, [committedText, selectedMood, useFlats, bassOrder]);
   useEffect(() => {
     setShowNegativeHarmony(false);
+    setShowFixedNegativeHarmony(false);
   }, [committedText]);
 
   function selectMood(mood) {
@@ -1876,7 +1905,7 @@ async function handleSaveProgression() {
                     </div>
                   )}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                   <span className="vl-current-notes">
                     {currentNotes.map(m => midiToName(m, key.flats)).join(" · ")}
                   </span>
@@ -1887,6 +1916,14 @@ async function handleSaveProgression() {
                     aria-expanded={showNegativeHarmony}
                   >
                     Show Shadow Voicing
+                  </button>
+                  <button
+                    type="button"
+                    className={"vl-negative-btn" + (showFixedNegativeHarmony ? " active" : "")}
+                    onClick={() => setShowFixedNegativeHarmony(show => !show)}
+                    aria-expanded={showFixedNegativeHarmony}
+                  >
+                    Show Negative Harmony
                   </button>
                   <div className="vl-play-group">
                     <button
@@ -1955,6 +1992,45 @@ async function handleSaveProgression() {
                   </div>
                   <div className="vl-piano-wrap">
                     <PianoKeys midis={negativeNotes} flats={negativeUsesFlats} />
+                  </div>
+                </div>
+              )}
+              {showFixedNegativeHarmony && (
+                <div className="vl-negative-shadow">
+                  <div className="vl-negative-kicker">Negative Harmony · fixed tonic F</div>
+                  <div className="vl-current-row">
+                    <div>
+                      <div className="vl-current-name">
+                        {fixedNegativeLabel || "Custom voicing"}
+                      </div>
+                      {fixedNegativeIntervalQualities && (
+                        <div className="vl-current-aliases">
+                          Interval qualities: {fixedNegativeIntervalQualities}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span className="vl-current-notes">
+                        {fixedNegativeNotes.map(m => midiToName(m, true)).join(" · ")}
+                      </span>
+                      <div className="vl-play-group">
+                        <button
+                          className="vl-play-btn"
+                          onClick={() => playChord(fixedNegativeNotes, "fixed-negative")}
+                          aria-label="Play Negative Harmony voicing"
+                          type="button"
+                        >
+                          {playingKey === "fixed-negative" ? "■" : "▶"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="vl-piano-wrap">
+                    <PianoKeys
+                      midis={fixedNegativeNotes}
+                      flats
+                      ariaLabel="Piano keyboard showing Negative Harmony voicing"
+                    />
                   </div>
                 </div>
               )}
