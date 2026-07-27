@@ -16,6 +16,7 @@ import {
   normalizeProgressionTitle,
 } from "../savedProgressionDisplay.js";
 import {
+  displayVoicingContext,
   visibleProgressions,
   visibleVoicings,
   voicingCategories,
@@ -27,11 +28,6 @@ function savedDate(value) {
   return Number.isNaN(date.getTime())
     ? null
     : new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
-}
-
-function displayVoicingContext(value) {
-  if (typeof value !== "string") return value;
-  return value.replace(/^negative harmony\b/i, "Shadow Voicing");
 }
 
 export default function SavedLibrary({

@@ -1,8 +1,16 @@
 import { formatOrderedNotes } from "./noteParsing.js";
 
+export function displayVoicingContext(value) {
+  if (typeof value !== "string") return value;
+  if (!/^negative harmony\b/i.test(value.trim())) return value;
+  return value
+    .replace(/\s*·\s*Interval qualities:.*$/i, "")
+    .trim();
+}
+
 export function voicingCategory(record) {
   const emotion = typeof record?.emotion === "string" ? record.emotion.trim() : "";
-  return emotion.toLowerCase().startsWith("negative harmony of")
+  return /^negative harmony\b/i.test(emotion)
     ? "Negative Harmony"
     : emotion || "Uncategorized";
 }

@@ -2,10 +2,24 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  displayVoicingContext,
   visibleProgressions,
   visibleVoicings,
   voicingCategories,
 } from "../src/savedLibraryFilters.js";
+
+test("saved Negative Harmony context retains its source and hides interval details", () => {
+  assert.equal(
+    displayVoicingContext(
+      "Negative Harmony · Am interpreted as ii of G · Interval qualities: major",
+    ),
+    "Negative Harmony · Am interpreted as ii of G",
+  );
+  assert.equal(
+    displayVoicingContext("Shadow Voicing of B♭maj9"),
+    "Shadow Voicing of B♭maj9",
+  );
+});
 
 const voicings = [
   { id: 1, chord_name: "Am7", notes: "A3 C4 E4 G4", emotion: "Warm & At Rest", created_at: "2026-01-01", favorite: false },
