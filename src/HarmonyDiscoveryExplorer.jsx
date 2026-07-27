@@ -1297,6 +1297,15 @@ async function handleSaveProgression() {
           cursor: not-allowed; opacity: 0.5;
           border-color: var(--hair); color: var(--ink-dim); background: transparent;
         }
+        .vl-save-action {
+          min-width: 72px;
+          height: 42px;
+          padding: 0 14px;
+          border-radius: 999px;
+          font-family: 'Inter', sans-serif;
+          font-size: 11px;
+          font-weight: 600;
+        }
         .vl-control-row > .vl-negative-btn {
           height: 42px;
           padding-top: 0;
@@ -1659,8 +1668,10 @@ async function handleSaveProgression() {
         .vl-trail-clear:hover { color: var(--rust); }
         .vl-save-progression {
           margin-left: 6px;
-          padding: 7px 13px;
-          border-radius: 7px;
+          min-width: 72px;
+          height: 42px;
+          padding: 0 14px;
+          border-radius: 999px;
           border: 1px solid var(--sage);
           background: rgba(111,169,140,0.14);
           color: var(--ink);
@@ -1767,6 +1778,12 @@ async function handleSaveProgression() {
         }
         .vl-single-voicing-actions {
           align-items: flex-start;
+        }
+        .vl-single-voicing-actions .vl-play-control {
+          height: auto;
+        }
+        .vl-single-voicing-actions > .vl-row-apply {
+          align-self: flex-start;
         }
         .vl-library-card-actions .vl-row-apply:disabled {
           cursor: wait; opacity: 0.6;
@@ -2143,7 +2160,7 @@ async function handleSaveProgression() {
                     <div className="vl-current-name">{currentLabel || "Custom voicing"}</div>
                     <button
                       type="button"
-                      className="vl-row-apply"
+                      className="vl-row-apply vl-save-action"
                       onClick={() =>
                         handleSaveVoicing(
                           currentNotes,
@@ -2213,7 +2230,7 @@ async function handleSaveProgression() {
                       </div>
                       <button
                         type="button"
-                        className="vl-row-apply"
+                        className="vl-row-apply vl-save-action"
                         onClick={() =>
                           handleSaveVoicing(
                             negativeNotes,
@@ -2273,7 +2290,7 @@ async function handleSaveProgression() {
                         </div>
                         <button
                           type="button"
-                          className="vl-row-apply"
+                          className="vl-row-apply vl-save-action"
                           onClick={() => saveDerivedNegativeHarmony(result)}
                           disabled={!result.notes.length || !result.chordName || isSaving}
                         >
@@ -2345,7 +2362,7 @@ async function handleSaveProgression() {
                           </div>
                           <button
                             type="button"
-                            className="vl-row-apply"
+                            className="vl-row-apply vl-save-action"
                             onClick={() =>
                               handleSaveVoicing(
                                 selectedNotes,

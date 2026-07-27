@@ -39,6 +39,20 @@ test("current and derived voicing action rows align play icons with adjacent con
   assert.match(source, /playVoicing\(result\.notes, `derived-negative-/);
 });
 
+test("voicing Save controls use the same full-height pill format as reveal controls", async () => {
+  const source = await readFile(explorerUrl, "utf8");
+
+  assert.ok((source.match(/className="vl-row-apply vl-save-action"/g) || []).length >= 4);
+  assert.match(
+    source,
+    /\.vl-save-action\s*\{[^}]*min-width:\s*72px;[^}]*height:\s*42px;[^}]*padding:\s*0 14px;[^}]*border-radius:\s*999px;[^}]*font-family:\s*'Inter'/s,
+  );
+  assert.match(
+    source,
+    /\.vl-save-progression\s*\{[^}]*height:\s*42px;[^}]*padding:\s*0 14px;[^}]*border-radius:\s*999px;/s,
+  );
+});
+
 test("saved voicing and progression action rows align compact controls", async () => {
   const [explorer, library] = await Promise.all([
     readFile(explorerUrl, "utf8"),
@@ -50,6 +64,8 @@ test("saved voicing and progression action rows align compact controls", async (
     /\.vl-library-card-actions\s*\{[^}]*display:\s*flex;[^}]*align-items:\s*center;[^}]*flex-wrap:\s*wrap;[^}]*gap:\s*8px;/s,
   );
   assert.match(explorer, /\.vl-single-voicing-actions\s*\{[^}]*align-items:\s*flex-start;/s);
+  assert.match(explorer, /\.vl-single-voicing-actions \.vl-play-control\s*\{[^}]*height:\s*auto;/s);
+  assert.match(explorer, /\.vl-single-voicing-actions > \.vl-row-apply\s*\{[^}]*align-self:\s*flex-start;/s);
   assert.match(library, /className="vl-library-card-actions vl-single-voicing-actions"/);
   assert.doesNotMatch(explorer, /\.vl-play-control\.has-tap \.vl-row-apply/);
   assert.match(library, /▶ Play"}[\s\S]*>\s*Restore\s*<\/button>/);
