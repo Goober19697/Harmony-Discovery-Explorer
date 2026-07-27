@@ -24,13 +24,16 @@ test("the piano and existing analyzer receive the transformed MIDI sequence", as
   assert.match(source, /<PianoKeys\s+midis=\{result\.notes\}/s);
 });
 
-test("each Negative Harmony result displays its interpretation and analysis", async () => {
+test("each Negative Harmony result displays its interpretation and chord analysis compactly", async () => {
   const source = await readFile(explorerUrl, "utf8");
 
   assert.match(source, /negativeHarmonyResults\.map\(result =>/);
   assert.match(source, /Negative Harmony — \{result\.explanation\}/);
   assert.match(source, /\{result\.chordName \|\| "Custom voicing"\}/);
-  assert.match(source, /Interval qualities: \{result\.intervalQualities\}/);
+  assert.doesNotMatch(source, /Interval qualities: \{result\.intervalQualities\}/);
+  assert.match(source, /intervalQualitiesForAnalysis\(analysis\)/);
+  assert.match(source, /className="vl-negative-shadow vl-negative-result"/);
+  assert.match(source, /\.vl-negative-result \.vl-piano-wrap\s*\{[^}]*margin-top:\s*10px;/s);
 });
 
 test("only analyses without a recognized root disable Negative Harmony", async () => {

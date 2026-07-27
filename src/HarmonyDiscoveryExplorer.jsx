@@ -1306,6 +1306,15 @@ async function handleSaveProgression() {
           font-size: 11px; font-weight: 600; letter-spacing: 0;
           text-transform: none;
         }
+        .vl-negative-result {
+          padding-top: 10px;
+        }
+        .vl-negative-result .vl-negative-interpretation {
+          margin-bottom: 4px;
+        }
+        .vl-negative-result .vl-piano-wrap {
+          margin-top: 10px;
+        }
         .vl-piano-wrap {
           margin-top: 12px;
           padding: 10px;
@@ -2223,30 +2232,23 @@ async function handleSaveProgression() {
                 const isAdding = negativeHarmonyAddingIds.has(result.id);
                 const isSaving = negativeHarmonySavingIds.has(result.id);
                 return (
-                  <div className="vl-negative-shadow" key={result.id}>
+                  <div className="vl-negative-shadow vl-negative-result" key={result.id}>
                     <div className="vl-negative-interpretation">
                       Negative Harmony — {result.explanation}
                     </div>
                     <div className="vl-current-row">
-                      <div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                          <div className="vl-current-name">
-                            {result.chordName || "Custom voicing"}
-                          </div>
-                          <button
-                            type="button"
-                            className="vl-row-apply"
-                            onClick={() => saveDerivedNegativeHarmony(result)}
-                            disabled={!result.notes.length || !result.chordName || isSaving}
-                          >
-                            {isSaving ? "Saving…" : "Save"}
-                          </button>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <div className="vl-current-name">
+                          {result.chordName || "Custom voicing"}
                         </div>
-                        {result.intervalQualities && (
-                          <div className="vl-current-aliases">
-                            Interval qualities: {result.intervalQualities}
-                          </div>
-                        )}
+                        <button
+                          type="button"
+                          className="vl-row-apply"
+                          onClick={() => saveDerivedNegativeHarmony(result)}
+                          disabled={!result.notes.length || !result.chordName || isSaving}
+                        >
+                          {isSaving ? "Saving…" : "Save"}
+                        </button>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <span className="vl-current-notes">
