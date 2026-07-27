@@ -6,6 +6,7 @@ import {
   negativeHarmonyLabel,
   negativeHarmonySourceDescription,
   negativeHarmonyUsesFlats,
+  shadowVoicingSourceDescription,
 } from "../src/negativeHarmony.js";
 import { chordLabel } from "../src/chordPatterns.js";
 
@@ -48,5 +49,16 @@ test("negative harmony save context identifies its source chord or source notes"
   assert.equal(
     negativeHarmonySourceDescription("Custom voicing", [53, 57, 60, 64, 67], true),
     "Negative harmony of F3 A3 C4 E4 G4"
+  );
+});
+
+test("shadow voicing save context remains distinct from Negative Harmony", () => {
+  assert.equal(
+    shadowVoicingSourceDescription("Fmaj9", [53, 57, 60, 64, 67], true),
+    "Shadow Voicing of Fmaj9"
+  );
+  assert.equal(
+    shadowVoicingSourceDescription("Custom voicing", [53, 57, 60, 64, 67], true),
+    "Shadow Voicing of F3 A3 C4 E4 G4"
   );
 });

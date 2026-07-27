@@ -50,3 +50,13 @@ export function negativeHarmonySourceDescription(sourceLabel, sourceNotes, useFl
     : formatOrderedNotes(sourceNotes, { useFlats }) || "unknown voicing";
   return `Negative harmony of ${source}`;
 }
+
+export function shadowVoicingSourceDescription(sourceLabel, sourceNotes, useFlats = false) {
+  const reliableLabel = typeof sourceLabel === "string" &&
+    sourceLabel.trim() &&
+    sourceLabel.trim().toLowerCase() !== "custom voicing";
+  const source = reliableLabel
+    ? sourceLabel.trim()
+    : formatOrderedNotes(sourceNotes, { useFlats }) || "unknown voicing";
+  return `Shadow Voicing of ${source}`;
+}

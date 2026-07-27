@@ -12,8 +12,8 @@ import {
 import {
   negativeHarmony,
   negativeHarmonyLabel,
-  negativeHarmonySourceDescription,
   negativeHarmonyUsesFlats,
+  shadowVoicingSourceDescription,
 } from "./negativeHarmony.js";
 import { tonicNegativeHarmony } from "./fixedTonicNegativeHarmony.js";
 import { chordRootFromName } from "./chordRoot.js";
@@ -2235,7 +2235,7 @@ async function handleSaveProgression() {
                           handleSaveVoicing(
                             negativeNotes,
                             negativeHarmonyLabel(negativeNotes),
-                            negativeHarmonySourceDescription(
+                            shadowVoicingSourceDescription(
                               currentLabel,
                               currentNotes,
                               key.flats
