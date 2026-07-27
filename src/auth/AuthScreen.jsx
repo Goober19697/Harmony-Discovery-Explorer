@@ -3,6 +3,82 @@ import { useAuth } from "./AuthContext.jsx";
 
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+function PasswordVisibilityIcon({ visible }) {
+  return visible ? (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 3l18 18" />
+      <path d="M10.6 10.7a2 2 0 0 0 2.7 2.7" />
+      <path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5.5 0 9 5.3 9 5.3a14.7 14.7 0 0 1-2.1 2.6" />
+      <path d="M6.6 6.6A15.5 15.5 0 0 0 3 9.3S6.5 14.7 12 14.7a9.8 9.8 0 0 0 3.4-.6" />
+    </svg>
+  ) : (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 12s3.5-5.3 9-5.3 9 5.3 9 5.3-3.5 5.3-9 5.3S3 12 3 12z" />
+      <circle cx="12" cy="12" r="2.4" />
+    </svg>
+  );
+}
+
+export function PasswordInput({
+  id,
+  label,
+  name,
+  value,
+  onChange,
+  autoComplete,
+}) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  return (
+    <div className="auth-field">
+      <label className="auth-label" htmlFor={id}>{label}</label>
+      <div className="auth-password-control">
+        <input
+          className="auth-input auth-password-input"
+          id={id}
+          name={name}
+          type={isVisible ? "text" : "password"}
+          value={value}
+          onChange={onChange}
+          autoComplete={autoComplete}
+          minLength={8}
+          required
+        />
+        <button
+          className="auth-password-toggle"
+          type="button"
+          onClick={() => setIsVisible(current => !current)}
+          aria-label={isVisible ? "Hide password" : "Show password"}
+          aria-controls={id}
+          aria-pressed={isVisible}
+        >
+          <PasswordVisibilityIcon visible={isVisible} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function AuthScreen() {
   const { authNotice, clearAuthNotice, login, register } = useAuth();
   const [mode, setMode] = useState("login");
@@ -104,6 +180,18 @@ export default function AuthScreen() {
           font: 16px 'Inter', sans-serif; box-sizing: border-box; outline: none;
         }
         .auth-input:focus { border-color: var(--brass); }
+        .auth-password-control { position: relative; }
+        .auth-password-input { padding-right: 44px; }
+        .auth-password-toggle {
+          position: absolute; top: 50%; right: 8px; transform: translateY(-50%);
+          width: 32px; height: 32px; padding: 0; border: 0; border-radius: 6px;
+          display: grid; place-items: center; background: transparent;
+          color: var(--ink-dim); cursor: pointer;
+        }
+        .auth-password-toggle:hover { color: var(--ink); background: rgba(237,230,214,0.07); }
+        .auth-password-toggle:focus-visible {
+          color: var(--brass); outline: 2px solid var(--brass); outline-offset: 1px;
+        }
         .auth-submit {
           margin-top: 4px; padding: 11px 16px; border: 1px solid var(--brass);
           border-radius: 7px; background: rgba(201,138,58,0.14); color: var(--ink);
@@ -168,33 +256,24 @@ export default function AuthScreen() {
               required
             />
           </label>
-          <label className="auth-field">
-            <span className="auth-label">Password</span>
-            <input
-              className="auth-input"
-              name="password"
-              type="password"
-              value={form.password}
-              onChange={updateField}
-              autoComplete={isRegistering ? "new-password" : "current-password"}
-              minLength={8}
-              required
-            />
-          </label>
+          <PasswordInput
+            key={mode}
+            id={`${mode}-password`}
+            label="Password"
+            name="password"
+            value={form.password}
+            onChange={updateField}
+            autoComplete={isRegistering ? "new-password" : "current-password"}
+          />
           {isRegistering && (
-            <label className="auth-field">
-              <span className="auth-label">Confirm password</span>
-              <input
-                className="auth-input"
-                name="confirmPassword"
-                type="password"
-                value={form.confirmPassword}
-                onChange={updateField}
-                autoComplete="new-password"
-                minLength={8}
-                required
-              />
-            </label>
+            <PasswordInput
+              id="register-confirm-password"
+              label="Confirm password"
+              name="confirmPassword"
+              value={form.confirmPassword}
+              onChange={updateField}
+              autoComplete="new-password"
+            />
           )}
           {(error || authNotice) && (
             <p className="auth-error" role="alert">{error || authNotice}</p>
