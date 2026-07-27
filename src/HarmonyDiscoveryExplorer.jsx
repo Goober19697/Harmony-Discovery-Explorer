@@ -1297,15 +1297,6 @@ async function handleSaveProgression() {
           cursor: not-allowed; opacity: 0.5;
           border-color: var(--hair); color: var(--ink-dim); background: transparent;
         }
-        .vl-save-action {
-          min-width: 72px;
-          height: 42px;
-          padding: 0 14px;
-          border-radius: 999px;
-          font-family: 'Inter', sans-serif;
-          font-size: 11px;
-          font-weight: 600;
-        }
         .vl-control-row > .vl-negative-btn {
           height: 42px;
           padding-top: 0;
@@ -1500,6 +1491,15 @@ async function handleSaveProgression() {
         }
         .vl-row-apply:hover { border-color: var(--brass); color: var(--ink); }
         .vl-row-apply:disabled { opacity: 0.4; cursor: not-allowed; border-color: var(--hair); color: var(--ink-dim); }
+        .vl-row-apply.vl-save-action {
+          min-width: 72px;
+          height: 42px;
+          padding: 0 14px;
+          border-radius: 999px;
+          font-family: 'Inter', sans-serif;
+          font-size: 11px;
+          font-weight: 600;
+        }
         .vl-bass-order {
           flex-shrink: 0;
           display: inline-flex;

@@ -45,7 +45,7 @@ test("voicing Save controls use the same full-height pill format as reveal contr
   assert.ok((source.match(/className="vl-row-apply vl-save-action"/g) || []).length >= 4);
   assert.match(
     source,
-    /\.vl-save-action\s*\{[^}]*min-width:\s*72px;[^}]*height:\s*42px;[^}]*padding:\s*0 14px;[^}]*border-radius:\s*999px;[^}]*font-family:\s*'Inter'/s,
+    /\.vl-row-apply\.vl-save-action\s*\{[^}]*min-width:\s*72px;[^}]*height:\s*42px;[^}]*padding:\s*0 14px;[^}]*border-radius:\s*999px;[^}]*font-family:\s*'Inter'/s,
   );
   assert.match(
     source,
