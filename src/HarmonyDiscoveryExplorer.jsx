@@ -17,6 +17,7 @@ import {
 } from "./negativeHarmony.js";
 import { tonicNegativeHarmony } from "./fixedTonicNegativeHarmony.js";
 import { chordRootFromName } from "./chordRoot.js";
+import { functionalNegativeHarmonyInterpretations } from "./functionalNegativeHarmony.js";
 import {
   candidateNaming,
   candidateAt,
@@ -378,8 +379,8 @@ export default function HarmonyDiscoveryExplorer() {
   const [audioError, setAudioError] = useState(null);
   const [showNegativeHarmony, setShowNegativeHarmony] = useState(false);
   const [showFixedNegativeHarmony, setShowFixedNegativeHarmony] = useState(false);
-  const [negativeHarmonyAdding, setNegativeHarmonyAdding] = useState(false);
-  const [negativeHarmonySaving, setNegativeHarmonySaving] = useState(false);
+  const [negativeHarmonyAddingIds, setNegativeHarmonyAddingIds] = useState(() => new Set());
+  const [negativeHarmonySavingIds, setNegativeHarmonySavingIds] = useState(() => new Set());
   const [bassOrder, setBassOrder] = useState("ascending");
   const [volume, setVolume] = useState(100); // 0-100
   const [backendStatus, setBackendStatus] = useState("Checking backend...");
@@ -389,8 +390,8 @@ export default function HarmonyDiscoveryExplorer() {
   const [latestSavedVoicing, setLatestSavedVoicing] = useState(null);
   const [latestSavedProgression, setLatestSavedProgression] = useState(null);
   const synthRef = useRef(null);
-  const negativeHarmonyAddLockRef = useRef(false);
-  const negativeHarmonySaveLockRef = useRef(false);
+  const negativeHarmonyAddLockRef = useRef(new Set());
+  const negativeHarmonySaveLockRef = useRef(new Set());
   const committedText = history[history.length - 1].text;
 
   async function handleLogout() {
@@ -641,40 +642,48 @@ async function handleSaveProgression() {
     () => chordRootFromName(analyzedCurrentLabel),
     [analyzedCurrentLabel],
   );
-  const derivedNegativeNotes = useMemo(
-    () => tonicNegativeHarmony(currentNotes, negativeReference?.pitchClass),
-    [currentNotes, negativeReference],
+  const functionalInterpretations = useMemo(
+    () => functionalNegativeHarmonyInterpretations({
+      sourceChordName: analyzedCurrentLabel,
+      sourceChordRoot: negativeReference?.name,
+      sourceRootPitchClass: negativeReference?.pitchClass,
+      quality: currentAnalysis?.suffix,
+    }),
+    [analyzedCurrentLabel, negativeReference, currentAnalysis],
   );
-  const negativeAnalysisNotes = useMemo(
-    () => [...derivedNegativeNotes].sort((a, b) => a - b),
-    [derivedNegativeNotes],
+  const negativeHarmonyResults = useMemo(
+    () => functionalInterpretations.map(interpretation => {
+      const notes = tonicNegativeHarmony(
+        currentNotes,
+        interpretation.impliedTonicPitchClass,
+      );
+      const analysisNotes = notes.slice().sort((a, b) => a - b);
+      const analysis = analyzeNegativeHarmonyVoicing(analysisNotes);
+      const useResultFlats = inferUseFlats(
+        interpretation.impliedTonicName,
+        analysis?.rootPc,
+      );
+      const chordName = labelForAnalysis(analysis, useResultFlats);
+      const intervalQualities = intervalQualitiesForAnalysis(analysis);
+      const id = `${interpretation.functionLabel}-${interpretation.impliedTonicPitchClass}`;
+      return {
+        ...interpretation,
+        id,
+        notes,
+        analysisNotes,
+        analysis,
+        useFlats: useResultFlats,
+        chordName,
+        intervalQualities,
+        metadata: `Negative Harmony · ${interpretation.explanation} · ` +
+          `Interval qualities: ${intervalQualities}`,
+      };
+    }),
+    [functionalInterpretations, currentNotes],
   );
-  const derivedNegativeAnalysis = useMemo(
-    () => analyzeNegativeHarmonyVoicing(negativeAnalysisNotes),
-    [negativeAnalysisNotes],
+  const hasNegativeHarmonyResults = negativeHarmonyResults.some(
+    result => result.notes.length && result.chordName,
   );
-  const derivedNegativeUsesFlats = inferUseFlats(
-    negativeReference?.name || "",
-    derivedNegativeAnalysis?.rootPc,
-  );
-  const derivedNegativeLabel = useMemo(
-    () => labelForAnalysis(derivedNegativeAnalysis, derivedNegativeUsesFlats),
-    [derivedNegativeAnalysis, derivedNegativeUsesFlats],
-  );
-  const derivedNegativeIntervalQualities = useMemo(
-    () => intervalQualitiesForAnalysis(derivedNegativeAnalysis),
-    [derivedNegativeAnalysis],
-  );
-  const hasDerivedNegativeResult = Boolean(
-    negativeReference &&
-    derivedNegativeNotes.length &&
-    derivedNegativeLabel,
-  );
-  const derivedNegativeMetadata = useMemo(() => {
-    if (!negativeReference || !derivedNegativeIntervalQualities) return null;
-    return `Negative Harmony · ${negativeReference.name} Reference · ` +
-      `Interval qualities: ${derivedNegativeIntervalQualities}`;
-  }, [negativeReference, derivedNegativeIntervalQualities]);
 
   // --- progression (trail) playback ---
   const [trailPlayingIdx, setTrailPlayingIdx] = useState(null); // which chip is sounding
@@ -948,8 +957,8 @@ async function handleSaveProgression() {
   useEffect(() => {
     setShowNegativeHarmony(false);
     setShowFixedNegativeHarmony(false);
-    setNegativeHarmonyAdding(false);
-    negativeHarmonyAddLockRef.current = false;
+    setNegativeHarmonyAddingIds(new Set());
+    negativeHarmonyAddLockRef.current.clear();
   }, [committedText]);
 
   function selectMood(mood) {
@@ -989,45 +998,59 @@ async function handleSaveProgression() {
     setError(null);
   }
 
-  function addDerivedNegativeHarmony() {
-    if (!hasDerivedNegativeResult || negativeHarmonyAddLockRef.current) return;
-    negativeHarmonyAddLockRef.current = true;
-    setNegativeHarmonyAdding(true);
+  function addDerivedNegativeHarmony(result) {
+    if (
+      !result?.notes.length ||
+      !result.chordName ||
+      negativeHarmonyAddLockRef.current.has(result.id)
+    ) return;
+    negativeHarmonyAddLockRef.current.add(result.id);
+    setNegativeHarmonyAddingIds(ids => new Set(ids).add(result.id));
 
-    const exactNotes = derivedNegativeNotes.slice();
+    const exactNotes = result.notes.slice();
     const text = formatOrderedNotes(exactNotes, {
-      useFlats: derivedNegativeUsesFlats,
+      useFlats: result.useFlats,
     });
     setRawText(text);
     setHistory(historyEntries => [
       ...historyEntries,
       {
         text,
-        label: derivedNegativeLabel,
-        emotion: derivedNegativeMetadata,
+        label: result.chordName,
+        emotion: result.metadata,
         midi_notes: exactNotes,
-        interval_qualities: derivedNegativeIntervalQualities,
+        interval_qualities: result.intervalQualities,
+        negative_harmony_function: result.functionLabel,
+        negative_harmony_tonic: result.impliedTonicName,
       },
     ]);
     setError(null);
   }
 
-  async function saveDerivedNegativeHarmony() {
-    if (!hasDerivedNegativeResult || negativeHarmonySaveLockRef.current) return;
-    negativeHarmonySaveLockRef.current = true;
-    setNegativeHarmonySaving(true);
+  async function saveDerivedNegativeHarmony(result) {
+    if (
+      !result?.notes.length ||
+      !result.chordName ||
+      negativeHarmonySaveLockRef.current.has(result.id)
+    ) return;
+    negativeHarmonySaveLockRef.current.add(result.id);
+    setNegativeHarmonySavingIds(ids => new Set(ids).add(result.id));
 
-    const exactNotes = derivedNegativeNotes.slice();
+    const exactNotes = result.notes.slice();
     try {
       await handleSaveVoicing(
         exactNotes,
-        derivedNegativeLabel,
-        derivedNegativeMetadata,
-        derivedNegativeUsesFlats,
+        result.chordName,
+        result.metadata,
+        result.useFlats,
       );
     } finally {
-      negativeHarmonySaveLockRef.current = false;
-      setNegativeHarmonySaving(false);
+      negativeHarmonySaveLockRef.current.delete(result.id);
+      setNegativeHarmonySavingIds(ids => {
+        const next = new Set(ids);
+        next.delete(result.id);
+        return next;
+      });
     }
   }
 
@@ -2013,7 +2036,7 @@ async function handleSaveProgression() {
                     className={"vl-negative-btn" + (showFixedNegativeHarmony ? " active" : "")}
                     onClick={() => setShowFixedNegativeHarmony(show => !show)}
                     aria-expanded={showFixedNegativeHarmony}
-                    disabled={!negativeReference}
+                    disabled={!hasNegativeHarmonyResults}
                   >
                     Show Negative Harmony
                   </button>
@@ -2029,9 +2052,9 @@ async function handleSaveProgression() {
                   </div>
                 </div>
               </div>
-              {!negativeReference && (
+              {!hasNegativeHarmonyResults && (
                 <div className="vl-current-aliases">
-                  Negative Harmony requires a recognized chord root.
+                  No standard functional Negative Harmony interpretation is available.
                 </div>
               )}
               <div className="vl-piano-wrap">
@@ -2092,62 +2115,71 @@ async function handleSaveProgression() {
                   </div>
                 </div>
               )}
-              {showFixedNegativeHarmony && (
-                <div className="vl-negative-shadow">
-                  <div className="vl-negative-kicker">
-                    Negative Harmony · {negativeReference.name} Reference
-                  </div>
-                  <div className="vl-current-row">
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <div className="vl-current-name">
-                          {derivedNegativeLabel || "Custom voicing"}
+              {showFixedNegativeHarmony && negativeHarmonyResults.map(result => {
+                const isAdding = negativeHarmonyAddingIds.has(result.id);
+                const isSaving = negativeHarmonySavingIds.has(result.id);
+                return (
+                  <div className="vl-negative-shadow" key={result.id}>
+                    <div className="vl-negative-kicker">
+                      Negative Harmony · {result.explanation}
+                    </div>
+                    <div className="vl-current-row">
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <div className="vl-current-name">
+                            {result.chordName || "Custom voicing"}
+                          </div>
+                          <button
+                            type="button"
+                            className="vl-row-apply"
+                            onClick={() => saveDerivedNegativeHarmony(result)}
+                            disabled={!result.notes.length || !result.chordName || isSaving}
+                          >
+                            {isSaving ? "Saving…" : "Save"}
+                          </button>
+                        </div>
+                        {result.intervalQualities && (
+                          <div className="vl-current-aliases">
+                            Interval qualities: {result.intervalQualities}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span className="vl-current-notes">
+                          {result.notes
+                            .map(m => midiToName(m, result.useFlats))
+                            .join(" · ")}
+                        </span>
+                        <div className="vl-play-group">
+                          <button
+                            className="vl-play-btn"
+                            onClick={() => playChord(result.notes, `derived-negative-${result.id}`)}
+                            aria-label={`Play ${result.explanation}`}
+                            type="button"
+                          >
+                            {playingKey === `derived-negative-${result.id}` ? "■" : "▶"}
+                          </button>
                         </div>
                         <button
-                          type="button"
                           className="vl-row-apply"
-                          onClick={saveDerivedNegativeHarmony}
-                          disabled={!hasDerivedNegativeResult || negativeHarmonySaving}
-                        >
-                          {negativeHarmonySaving ? "Saving…" : "Save"}
-                        </button>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span className="vl-current-notes">
-                        {derivedNegativeNotes
-                          .map(m => midiToName(m, derivedNegativeUsesFlats))
-                          .join(" · ")}
-                      </span>
-                      <div className="vl-play-group">
-                        <button
-                          className="vl-play-btn"
-                          onClick={() => playChord(derivedNegativeNotes, "derived-negative")}
-                          aria-label="Play Negative Harmony voicing"
                           type="button"
+                          onClick={() => addDerivedNegativeHarmony(result)}
+                          disabled={!result.notes.length || !result.chordName || isAdding}
                         >
-                          {playingKey === "derived-negative" ? "■" : "▶"}
+                          {isAdding ? "Adding…" : "Add it →"}
                         </button>
                       </div>
-                      <button
-                        className="vl-row-apply"
-                        type="button"
-                        onClick={addDerivedNegativeHarmony}
-                        disabled={!hasDerivedNegativeResult || negativeHarmonyAdding}
-                      >
-                        {negativeHarmonyAdding ? "Adding…" : "Add it →"}
-                      </button>
+                    </div>
+                    <div className="vl-piano-wrap">
+                      <PianoKeys
+                        midis={result.notes}
+                        flats={result.useFlats}
+                        ariaLabel={`Piano keyboard showing ${result.explanation}`}
+                      />
                     </div>
                   </div>
-                  <div className="vl-piano-wrap">
-                    <PianoKeys
-                      midis={derivedNegativeNotes}
-                      flats={derivedNegativeUsesFlats}
-                      ariaLabel="Piano keyboard showing Negative Harmony voicing"
-                    />
-                  </div>
-                </div>
-              )}
+                );
+              })}
             </div>
 
             <div className="vl-mood-picker">

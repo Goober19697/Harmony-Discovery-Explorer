@@ -18,24 +18,29 @@ test("the piano and existing analyzer receive the transformed MIDI sequence", as
 
   assert.match(
     source,
-    /tonicNegativeHarmony\(currentNotes, negativeReference\?\.pitchClass\)/,
+    /tonicNegativeHarmony\(\s*currentNotes,\s*interpretation\.impliedTonicPitchClass,/,
   );
-  assert.match(source, /analyzeNegativeHarmonyVoicing\(negativeAnalysisNotes\)/);
-  assert.match(source, /<PianoKeys\s+midis=\{derivedNegativeNotes\}/s);
+  assert.match(source, /analyzeNegativeHarmonyVoicing\(analysisNotes\)/);
+  assert.match(source, /<PianoKeys\s+midis=\{result\.notes\}/s);
 });
 
-test("the Negative Harmony result displays its analyzed chord name without an interval subtitle", async () => {
+test("each Negative Harmony result displays its interpretation and analysis", async () => {
   const source = await readFile(explorerUrl, "utf8");
 
-  assert.match(source, /\{derivedNegativeLabel \|\| "Custom voicing"\}/);
-  assert.doesNotMatch(source, /Interval qualities: \{derivedNegativeIntervalQualities\}/);
+  assert.match(source, /negativeHarmonyResults\.map\(result =>/);
+  assert.match(source, /Negative Harmony · \{result\.explanation\}/);
+  assert.match(source, /\{result\.chordName \|\| "Custom voicing"\}/);
+  assert.match(source, /Interval qualities: \{result\.intervalQualities\}/);
 });
 
-test("invalid analyzed chord roots disable Negative Harmony without an F fallback", async () => {
+test("unsupported functional interpretations disable Negative Harmony without guessing", async () => {
   const source = await readFile(explorerUrl, "utf8");
 
-  assert.match(source, /disabled=\{!negativeReference\}/);
-  assert.match(source, /Negative Harmony requires a recognized chord root\./);
+  assert.match(source, /disabled=\{!hasNegativeHarmonyResults\}/);
+  assert.match(
+    source,
+    /No standard functional Negative Harmony interpretation is available\./,
+  );
   assert.doesNotMatch(source, /fixed tonic F/i);
 });
 
@@ -44,15 +49,15 @@ test("Negative Harmony actions snapshot transformed notes and preserve metadata"
 
   assert.match(
     source,
-    /function addDerivedNegativeHarmony\(\)[\s\S]*const exactNotes = derivedNegativeNotes\.slice\(\);[\s\S]*text,[\s\S]*label: derivedNegativeLabel,[\s\S]*midi_notes: exactNotes,[\s\S]*interval_qualities: derivedNegativeIntervalQualities,/,
+    /function addDerivedNegativeHarmony\(result\)[\s\S]*const exactNotes = result\.notes\.slice\(\);[\s\S]*label: result\.chordName,[\s\S]*midi_notes: exactNotes,[\s\S]*interval_qualities: result\.intervalQualities,[\s\S]*negative_harmony_function: result\.functionLabel,[\s\S]*negative_harmony_tonic: result\.impliedTonicName,/,
   );
   assert.match(
     source,
-    /async function saveDerivedNegativeHarmony\(\)[\s\S]*const exactNotes = derivedNegativeNotes\.slice\(\);[\s\S]*await handleSaveVoicing\(\s*exactNotes,\s*derivedNegativeLabel,\s*derivedNegativeMetadata,\s*derivedNegativeUsesFlats,/,
+    /async function saveDerivedNegativeHarmony\(result\)[\s\S]*const exactNotes = result\.notes\.slice\(\);[\s\S]*await handleSaveVoicing\(\s*exactNotes,\s*result\.chordName,\s*result\.metadata,\s*result\.useFlats,/,
   );
   assert.doesNotMatch(
     source,
-    /handleSaveVoicing\(\s*currentNotes,\s*derivedNegativeLabel/,
+    /handleSaveVoicing\(\s*currentNotes,\s*result\.chordName/,
   );
 });
 
@@ -61,18 +66,18 @@ test("Negative Harmony controls disable invalid or repeated submissions", async 
 
   assert.match(
     source,
-    /if \(!hasDerivedNegativeResult \|\| negativeHarmonyAddLockRef\.current\) return;/,
+    /negativeHarmonyAddLockRef\.current\.has\(result\.id\)/,
   );
   assert.match(
     source,
-    /if \(!hasDerivedNegativeResult \|\| negativeHarmonySaveLockRef\.current\) return;/,
+    /negativeHarmonySaveLockRef\.current\.has\(result\.id\)/,
   );
   assert.match(
     source,
-    /onClick=\{saveDerivedNegativeHarmony\}[\s\S]*disabled=\{!hasDerivedNegativeResult \|\| negativeHarmonySaving\}/,
+    /onClick=\{\(\) => saveDerivedNegativeHarmony\(result\)\}[\s\S]*disabled=\{!result\.notes\.length \|\| !result\.chordName \|\| isSaving\}/,
   );
   assert.match(
     source,
-    /onClick=\{addDerivedNegativeHarmony\}[\s\S]*disabled=\{!hasDerivedNegativeResult \|\| negativeHarmonyAdding\}/,
+    /onClick=\{\(\) => addDerivedNegativeHarmony\(result\)\}[\s\S]*disabled=\{!result\.notes\.length \|\| !result\.chordName \|\| isAdding\}/,
   );
 });
