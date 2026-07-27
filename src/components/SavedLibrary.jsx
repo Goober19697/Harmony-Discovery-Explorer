@@ -238,7 +238,7 @@ export default function SavedLibrary({
       <div className="vl-library-head">
         <div>
           <div className="vl-eyebrow">Your collection</div>
-          <h2 className="vl-library-title">Saved Library</h2>
+          <h2 className="vl-library-title display-title">Saved Library</h2>
         </div>
         <div className="vl-library-actions">
           <button

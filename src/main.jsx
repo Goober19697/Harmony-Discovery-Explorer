@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import HarmonyDiscoveryExplorer from "./HarmonyDiscoveryExplorer.jsx";
 import { AuthProvider, useAuth } from "./auth/AuthContext.jsx";
 import AuthScreen, { AuthLoadingScreen } from "./auth/AuthScreen.jsx";
+import "./styles.css";
 
 // Optional: override the piano sample CDN via .env (see .env.example).
 // The component reads window.SAMPLE_BASE_URL so the same file also works

@@ -1,0 +1,7 @@
+:root {
+  --display-title-font: Didot, "Bodoni 72", "Times New Roman", serif;
+}
+
+.display-title {
+  font-family: var(--display-title-font);
+}

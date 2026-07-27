@@ -971,10 +971,9 @@ async function handleSaveProgression() {
           margin-bottom: 6px;
         }
         .vl-title {
-          font-family: 'Fraunces', serif;
-          font-optical-sizing: auto;
           font-weight: 600;
           font-size: 34px;
+          line-height: 1.15;
           margin: 0 0 4px;
           letter-spacing: -0.01em;
         }
@@ -1414,7 +1413,7 @@ async function handleSaveProgression() {
           display: flex; align-items: center; justify-content: space-between; gap: 12px;
         }
         .vl-library-title {
-          margin: 0; font-family: 'Fraunces', serif; font-size: 23px; font-weight: 600;
+          margin: 0; font-size: 23px; font-weight: 600; line-height: 1.2;
         }
         .vl-library-actions { justify-content: flex-end; flex-wrap: wrap; }
         .vl-library-tabs {
@@ -1645,7 +1644,7 @@ async function handleSaveProgression() {
           <span className="vl-account-name">{user.display_name || user.email}</span>
           <button className="vl-logout" type="button" onClick={handleLogout}>Logout</button>
         </div>
-        <h1 className="vl-title">Harmony Discovery Explorer</h1>
+        <h1 className="vl-title display-title">Harmony Discovery Explorer</h1>
         <p className="vl-sub">
           Enter a voicing, hear where it can move, discover new colors and
           interpretations for every harmony, and—if inspiration strikes—build a

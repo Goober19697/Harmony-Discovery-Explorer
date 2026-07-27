@@ -144,7 +144,7 @@ export default function AuthScreen() {
   return (
     <main className="auth-root">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
         .auth-root {
           --bg: #1B1D2A; --panel: #232640; --ink: #EDE6D6;
           --ink-dim: #9C97AE; --brass: #C98A3A; --rust: #C9634A;
@@ -153,16 +153,20 @@ export default function AuthScreen() {
           display: grid; place-items: center; box-sizing: border-box;
         }
         .auth-card {
-          width: min(100%, 420px); padding: 28px; background: var(--panel);
+          width: min(100%, 420px); padding: 34px 32px 32px; background: var(--panel);
           border: 1px solid rgba(237,230,214,0.10); border-radius: 12px;
           box-sizing: border-box;
         }
         .auth-title {
-          margin: 0 0 6px; font: 600 30px/1.1 'Fraunces', serif;
-          letter-spacing: -0.01em;
+          margin: 4px 0 10px; font-size: 32px; font-weight: 600;
+          line-height: 1.25; letter-spacing: -0.01em; text-align: center;
+          text-wrap: balance;
         }
-        .auth-subtitle { margin: 0 0 22px; color: var(--ink-dim); font-size: 14px; line-height: 1.5; }
-        .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 22px; }
+        .auth-subtitle {
+          margin: 0 auto 28px; color: var(--ink-dim); font-size: 14px;
+          line-height: 1.5; text-align: center; text-wrap: balance;
+        }
+        .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 24px; }
         .auth-tab {
           padding: 9px; border: 1px solid rgba(237,230,214,0.14);
           background: transparent; color: var(--ink-dim); cursor: pointer;
@@ -202,11 +206,13 @@ export default function AuthScreen() {
         .auth-loading { color: var(--ink-dim); font: 500 12px 'JetBrains Mono', monospace; }
         @media (max-width: 480px) {
           .auth-root { padding: max(16px, env(safe-area-inset-top)) 12px; }
-          .auth-card { padding: 22px 18px; }
+          .auth-card { padding: 26px 20px 24px; }
+          .auth-title { margin-top: 2px; font-size: clamp(27px, 8.5vw, 32px); line-height: 1.3; }
+          .auth-subtitle { margin-bottom: 24px; }
         }
       `}</style>
       <section className="auth-card" aria-labelledby="auth-title">
-        <h1 className="auth-title" id="auth-title">Harmony Discovery Explorer</h1>
+        <h1 className="auth-title display-title" id="auth-title">Harmony Discovery Explorer</h1>
         <p className="auth-subtitle">
           {isRegistering ? "Create an account to begin exploring." : "Log in to continue your harmonic journey."}
         </p>
