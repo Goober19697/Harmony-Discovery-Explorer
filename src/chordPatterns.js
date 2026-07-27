@@ -13,6 +13,7 @@ export const CHORD_PATTERNS = [
   { suffix: "maj7", intervals: [0, 4, 7, 11] },
   { suffix: "7", intervals: [0, 4, 7, 10] },
   { suffix: "m7", intervals: [0, 3, 7, 10] },
+  { suffix: "m7 (add13)", intervals: [0, 3, 7, 10, 9] },
   { suffix: "m7b5", intervals: [0, 3, 6, 10] },
   { suffix: "dim7", intervals: [0, 3, 6, 9] },
   { suffix: "mMaj7", intervals: [0, 3, 7, 11] },
@@ -33,9 +34,8 @@ export const CHORD_PATTERNS = [
   { suffix: "m6/9", intervals: [0, 3, 7, 9, 2] },
   { suffix: "maj9", intervals: [0, 4, 7, 11, 2] },
   {
-    suffix: "maj7#11",
+    suffix: "maj9#11",
     intervals: [0, 4, 7, 11, 2, 6],
-    negativeHarmonySuffix: "maj9#11",
   },
   { suffix: "maj9#5", intervals: [0, 4, 8, 11, 2] },
   { suffix: "maj11#5", intervals: [0, 4, 8, 11, 2, 5] },

@@ -33,7 +33,7 @@ test("a shadow can be named as a supported chord with an unplayed root", () => {
   assert.equal(negativeHarmonyLabel([47, 49, 56]), "Amaj9 (rootless)");
 });
 
-test("a major-seven sharp-eleven shadow uses its conventional major-nine name", () => {
+test("a major-nine sharp-eleven shadow preserves its conventional quality", () => {
   const source = [53, 57, 60, 64, 67, 71];
   assert.equal(negativeHarmonyLabel(negativeHarmony(source)), "Bmaj9#11");
 });

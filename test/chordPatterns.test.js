@@ -117,9 +117,9 @@ test("extended eleventh and thirteenth voicings are recognized", () => {
   assert.ok(QUALITIES.some(([suffix]) => suffix === "13"));
 });
 
-test("major-seven sharp-eleven collections use a conventional chord symbol", () => {
+test("major-nine sharp-eleven collections use a conventional chord symbol", () => {
   const notes = [53, 57, 60, 64, 67, 71];
-  assert.equal(chordLabel(notes), "Fmaj7#11");
+  assert.equal(chordLabel(notes), "Fmaj9#11");
   assert.doesNotMatch(chordLabel(notes), /^\w+\(/);
 });
 
@@ -128,6 +128,12 @@ test("a fifth-omitted dominant thirteen with an eleventh prefers its conventiona
   const flatNames = ["C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"];
   assert.equal(chordLabel(notes, flatNames), "A♭13");
   assert.doesNotMatch(chordLabel(notes, flatNames), /^C\(/);
+});
+
+test("a minor seventh with an added thirteenth outranks its major-six color inversion", () => {
+  const notes = [51, 57, 60, 63, 67, 70];
+  assert.equal(chordLabel(notes), "Cm7 (add13)");
+  assert.doesNotMatch(chordLabel(notes), /^D#6/);
 });
 
 test("a played third and seventh outrank a sixth-chord reinterpretation", () => {
