@@ -9,7 +9,7 @@ const libraryUrl = new URL("../src/components/SavedLibrary.jsx", import.meta.url
 test("the shared playback control places an instructional Tap label beneath its button", async () => {
   const source = await readFile(controlUrl, "utf8");
 
-  assert.match(source, /className="vl-play-group"/);
+  assert.match(source, /className=\{`vl-play-group vl-play-control/);
   assert.match(source, /<button[\s\S]*aria-label=\{ariaLabel\}[\s\S]*\{children\}[\s\S]*<\/button>/);
   assert.match(source, /showTapLabel = true/);
   assert.match(

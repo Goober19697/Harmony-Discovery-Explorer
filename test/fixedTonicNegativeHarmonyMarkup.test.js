@@ -33,7 +33,7 @@ test("each Negative Harmony result displays its interpretation and chord analysi
   assert.doesNotMatch(source, /Interval qualities: \{result\.intervalQualities\}/);
   assert.match(source, /intervalQualitiesForAnalysis\(analysis\)/);
   assert.match(source, /className="vl-negative-shadow vl-negative-result"/);
-  assert.match(source, /\.vl-negative-result \.vl-piano-wrap\s*\{[^}]*margin-top:\s*10px;/s);
+  assert.match(source, /\.vl-negative-result \.vl-piano-wrap\s*\{[^}]*margin-top:\s*16px;/s);
 });
 
 test("only analyses without a recognized root disable Negative Harmony", async () => {

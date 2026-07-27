@@ -1149,8 +1149,12 @@ function HarmonyDiscoveryExplorer() {
           white-space: pre-line;
         }
         .vl-current-row {
-          display: flex; align-items: baseline; justify-content: space-between;
-          margin-top: 4px;
+          display: flex; align-items: center; justify-content: space-between;
+          gap: 14px; margin-top: 4px;
+        }
+        .vl-control-row {
+          display: flex; align-items: center; justify-content: flex-start;
+          flex-wrap: wrap; gap: 10px; min-height: 42px;
         }
         .vl-current-name {
           font-family: 'Fraunces', serif; font-weight: 600; font-size: 20px; color: var(--ink);
@@ -1173,6 +1177,11 @@ function HarmonyDiscoveryExplorer() {
         .vl-negative-btn:disabled {
           cursor: not-allowed; opacity: 0.5;
           border-color: var(--hair); color: var(--ink-dim); background: transparent;
+        }
+        .vl-control-row > .vl-negative-btn {
+          height: 42px;
+          padding-top: 0;
+          padding-bottom: 0;
         }
         .vl-negative-shadow {
           margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--hair);
@@ -1316,14 +1325,6 @@ function HarmonyDiscoveryExplorer() {
           align-items: center;
           gap: 14px;
         }
-        .vl-row > .vl-play-group {
-          align-self: flex-start;
-          margin-top: 13px;
-        }
-        .vl-row > .vl-row-apply {
-          align-self: flex-start;
-          margin-top: 12px;
-        }
         .vl-row-name { width: 148px; flex-shrink: 0; }
         .vl-row-chord {
           font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px;
@@ -1369,7 +1370,7 @@ function HarmonyDiscoveryExplorer() {
         .vl-row-apply {
           flex-shrink: 0; background: transparent; border: 1px solid var(--hair);
           color: var(--ink-dim); font-family: 'JetBrains Mono', monospace; font-size: 11px;
-          height: 32px; padding: 0 10px; border-radius: 6px; cursor: pointer;
+          height: 42px; padding: 0 12px; border-radius: 6px; cursor: pointer;
           display: inline-flex; align-items: center; justify-content: center;
           line-height: 1; white-space: nowrap;
         }
@@ -1394,7 +1395,7 @@ function HarmonyDiscoveryExplorer() {
           align-items: center;
           justify-content: center;
           width: max-content;
-          min-width: 38px;
+          min-width: 42px;
           gap: 2px;
         }
         .vl-play-label {
@@ -1438,7 +1439,7 @@ function HarmonyDiscoveryExplorer() {
         }
         .vl-mode-toggle {
           display: inline-flex;
-          height: 32px;
+          height: 42px;
           align-items: stretch;
           border: 1px solid var(--hair);
           border-radius: 999px;
@@ -1448,7 +1449,7 @@ function HarmonyDiscoveryExplorer() {
         .vl-mode-btn {
           font-family: 'JetBrains Mono', monospace;
           font-size: 10.5px;
-          min-height: 30px;
+          min-height: 40px;
           padding: 0 10px;
           background: transparent;
           border: none;
@@ -1772,7 +1773,7 @@ function HarmonyDiscoveryExplorer() {
                     </div>
                   )}
                 </div>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
+                <div className="vl-control-row">
                   <span className="vl-current-notes">
                     {currentNotes.map(m => midiToName(m, key.flats)).join(" · ")}
                   </span>
@@ -1825,7 +1826,7 @@ function HarmonyDiscoveryExplorer() {
                     <div className="vl-current-name">
                       {negativeHarmonyLabel(negativeNotes)}
                     </div>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                    <div className="vl-control-row">
                       <span className="vl-current-notes">
                         {negativeNotes.map(m => midiToName(m, negativeUsesFlats)).join(" · ")}
                       </span>
@@ -1869,7 +1870,7 @@ function HarmonyDiscoveryExplorer() {
                         {derivedNegativeLabel || "Custom voicing"}
                       </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                    <div className="vl-control-row">
                       <span className="vl-current-notes">
                         {derivedNegativeNotes
                           .map(m => midiToName(m, derivedNegativeUsesFlats))

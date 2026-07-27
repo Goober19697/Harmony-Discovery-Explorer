@@ -10,7 +10,7 @@ export default function PlaybackControl({
   showTapLabel = true,
 }) {
   return (
-    <div className="vl-play-group">
+    <div className={`vl-play-group vl-play-control${showTapLabel ? " has-tap" : ""}`}>
       <button
         type="button"
         className={className}

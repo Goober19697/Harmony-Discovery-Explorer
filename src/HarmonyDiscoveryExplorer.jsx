@@ -1249,8 +1249,22 @@ async function handleSaveProgression() {
           white-space: pre-line;
         }
         .vl-current-row {
-          display: flex; align-items: baseline; justify-content: space-between;
-          margin-top: 4px;
+          display: flex; align-items: center; justify-content: space-between;
+          gap: 14px; margin-top: 4px;
+        }
+        .vl-control-row {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          flex-wrap: wrap;
+          gap: 10px;
+          min-height: 42px;
+        }
+        .vl-chord-header {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
         }
         .vl-current-name {
           font-family: 'Fraunces', serif; font-weight: 600; font-size: 20px; color: var(--ink);
@@ -1274,6 +1288,11 @@ async function handleSaveProgression() {
           cursor: not-allowed; opacity: 0.5;
           border-color: var(--hair); color: var(--ink-dim); background: transparent;
         }
+        .vl-control-row > .vl-negative-btn {
+          height: 42px;
+          padding-top: 0;
+          padding-bottom: 0;
+        }
         .vl-negative-shadow {
           margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--hair);
         }
@@ -1296,7 +1315,7 @@ async function handleSaveProgression() {
           margin-bottom: 4px;
         }
         .vl-negative-result .vl-piano-wrap {
-          margin-top: 10px;
+          margin-top: 16px;
         }
         .vl-piano-wrap {
           margin-top: 12px;
@@ -1418,13 +1437,12 @@ async function handleSaveProgression() {
           align-items: center;
           gap: 14px;
         }
-        .vl-row > .vl-play-group {
-          align-self: flex-start;
-          margin-top: 13px;
-        }
-        .vl-row > .vl-row-apply {
-          align-self: flex-start;
-          margin-top: 12px;
+        .vl-generated-controls {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          flex-wrap: wrap;
+          gap: 10px;
         }
         .vl-row-name { width: 148px; flex-shrink: 0; }
         .vl-row-chord {
@@ -1458,7 +1476,7 @@ async function handleSaveProgression() {
         .vl-row-apply {
           flex-shrink: 0; background: transparent; border: 1px solid var(--hair);
           color: var(--ink-dim); font-family: 'JetBrains Mono', monospace; font-size: 11px;
-          height: 32px; padding: 0 10px; border-radius: 6px; cursor: pointer;
+          height: 42px; padding: 0 12px; border-radius: 6px; cursor: pointer;
           display: inline-flex; align-items: center; justify-content: center;
           line-height: 1; white-space: nowrap;
         }
@@ -1468,7 +1486,10 @@ async function handleSaveProgression() {
           flex-shrink: 0;
           display: inline-flex;
           flex-direction: column;
+          align-items: stretch;
+          justify-content: center;
           gap: 2px;
+          height: 42px;
           color: var(--ink-dim);
           font-family: 'JetBrains Mono', monospace;
           font-size: 8px;
@@ -1482,7 +1503,7 @@ async function handleSaveProgression() {
           color: var(--ink-dim);
           font-family: 'JetBrains Mono', monospace;
           font-size: 10px;
-          height: 32px;
+          height: 30px;
           padding: 0 24px 0 7px;
           cursor: pointer;
         }
@@ -1507,8 +1528,17 @@ async function handleSaveProgression() {
           align-items: center;
           justify-content: center;
           width: max-content;
-          min-width: 38px;
+          min-width: 42px;
           gap: 2px;
+        }
+        .vl-play-control {
+          height: 42px;
+          box-sizing: border-box;
+        }
+        .vl-play-control.has-tap .vl-row-apply {
+          height: 30px;
+          padding-top: 0;
+          padding-bottom: 0;
         }
         .vl-play-label {
           color: var(--ink-dim);
@@ -1551,7 +1581,7 @@ async function handleSaveProgression() {
         }
         .vl-mode-toggle {
           display: inline-flex;
-          height: 32px;
+          height: 42px;
           align-items: stretch;
           border: 1px solid var(--hair);
           border-radius: 999px;
@@ -1561,7 +1591,7 @@ async function handleSaveProgression() {
         .vl-mode-btn {
           font-family: 'JetBrains Mono', monospace;
           font-size: 10.5px;
-          min-height: 30px;
+          min-height: 40px;
           padding: 0 10px;
           background: transparent;
           border: none;
@@ -1729,7 +1759,7 @@ async function handleSaveProgression() {
           outline: 2px solid var(--brass); outline-offset: 1px;
         }
         .vl-library-card-actions {
-          display: flex; align-items: flex-start; flex-wrap: wrap; gap: 8px;
+          display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
         }
         .vl-library-card-actions .vl-row-apply:disabled {
           cursor: wait; opacity: 0.6;
@@ -1857,6 +1887,11 @@ async function handleSaveProgression() {
           .vl-row > .vl-play-group,
           .vl-row > .vl-bass-order,
           .vl-row > .vl-row-apply { order: 3; }
+          .vl-row > .vl-generated-controls {
+            order: 3;
+            flex: 1 0 100%;
+            width: 100%;
+          }
           .vl-mode-toggle {
             max-width: 100%;
             overflow-x: auto;
@@ -2095,7 +2130,7 @@ async function handleSaveProgression() {
             <div className="vl-panel" style={{ paddingBottom: 16 }}>
               <div className="vl-current-row">
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <div className="vl-chord-header">
                     <div className="vl-current-name">{currentLabel || "Custom voicing"}</div>
                     <button
                       type="button"
@@ -2118,7 +2153,7 @@ async function handleSaveProgression() {
                     </div>
                   )}
                 </div>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
+                <div className="vl-control-row">
                   <span className="vl-current-notes">
                     {currentNotes.map(m => midiToName(m, key.flats)).join(" · ")}
                   </span>
@@ -2163,7 +2198,7 @@ async function handleSaveProgression() {
                 <div className="vl-negative-shadow">
                   <div className="vl-negative-kicker">Shadow voicing</div>
                   <div className="vl-current-row">
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <div className="vl-chord-header">
                       <div className="vl-current-name">
                         {negativeHarmonyLabel(negativeNotes)}
                       </div>
@@ -2186,7 +2221,7 @@ async function handleSaveProgression() {
                         Save
                       </button>
                     </div>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                    <div className="vl-control-row">
                       <span className="vl-current-notes">
                         {negativeNotes.map(m => midiToName(m, negativeUsesFlats)).join(" · ")}
                       </span>
@@ -2223,7 +2258,7 @@ async function handleSaveProgression() {
                       Negative Harmony — {result.explanation}
                     </div>
                     <div className="vl-current-row">
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <div className="vl-chord-header">
                         <div className="vl-current-name">
                           {result.chordName || "Custom voicing"}
                         </div>
@@ -2236,7 +2271,7 @@ async function handleSaveProgression() {
                           {isSaving ? "Saving…" : "Save"}
                         </button>
                       </div>
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                      <div className="vl-control-row">
                         <span className="vl-current-notes">
                           {result.notes
                             .map(m => midiToName(m, result.useFlats))
@@ -2292,7 +2327,7 @@ async function handleSaveProgression() {
                 <div className="vl-list">
                     <div className="vl-row" key={r.key}>
                       <div className="vl-row-name">
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <div className="vl-chord-header">
                           <div className="vl-row-chord">
                             {r.name}
                             {r.aliases.length > 0 && (
@@ -2330,44 +2365,46 @@ async function handleSaveProgression() {
                           );
                         })}
                       </div>
-                      <PlaybackControl
-                        onClick={() => playVoicing(selectedNotes, r.key)}
-                        ariaLabel={"Play move to " + r.name}
-                      >
-                        {playingKey === r.key ? "■" : "▶"}
-                      </PlaybackControl>
-                      <label className="vl-bass-order">
-                        <span>Bass</span>
-                        <select
-                          aria-label="Bass order"
-                          value={bassOrder}
-                          onChange={event => setBassOrder(event.target.value)}
+                      <div className="vl-generated-controls">
+                        <PlaybackControl
+                          onClick={() => playVoicing(selectedNotes, r.key)}
+                          ariaLabel={"Play move to " + r.name}
                         >
-                          <option value="ascending">Ascending</option>
-                          <option value="descending">Descending</option>
-                        </select>
-                      </label>
-                      <button
-                        className="vl-row-apply"
-                        type="button"
-                        onClick={showPreviousCandidate}
-                        disabled={selectedCandidateIndex === 0}
-                        aria-label="Show the previous voicing"
-                      >
-                        Back
-                      </button>
-                      <button
-                        className="vl-row-apply"
-                        type="button"
-                        onClick={showNextCandidate}
-                        disabled={selectedCandidateIndex >= candidates.length - 1}
-                        aria-label="Show the next closest voicing"
-                      >
-                        Next
-                      </button>
-                      <button className="vl-row-apply" onClick={() => applyResult(r)}>
-                        Add it →
-                      </button>
+                          {playingKey === r.key ? "■" : "▶"}
+                        </PlaybackControl>
+                        <label className="vl-bass-order">
+                          <span>Bass</span>
+                          <select
+                            aria-label="Bass order"
+                            value={bassOrder}
+                            onChange={event => setBassOrder(event.target.value)}
+                          >
+                            <option value="ascending">Ascending</option>
+                            <option value="descending">Descending</option>
+                          </select>
+                        </label>
+                        <button
+                          className="vl-row-apply"
+                          type="button"
+                          onClick={showPreviousCandidate}
+                          disabled={selectedCandidateIndex === 0}
+                          aria-label="Show the previous voicing"
+                        >
+                          Back
+                        </button>
+                        <button
+                          className="vl-row-apply"
+                          type="button"
+                          onClick={showNextCandidate}
+                          disabled={selectedCandidateIndex >= candidates.length - 1}
+                          aria-label="Show the next closest voicing"
+                        >
+                          Next
+                        </button>
+                        <button className="vl-row-apply" onClick={() => applyResult(r)}>
+                          Add it →
+                        </button>
+                      </div>
                     </div>
                     <div className="vl-piano-wrap">
                       <PianoKeys
