@@ -67,6 +67,10 @@ test("saved voicing and progression action rows align compact controls", async (
   assert.match(explorer, /\.vl-single-voicing-actions \.vl-play-control\s*\{[^}]*height:\s*auto;/s);
   assert.match(explorer, /\.vl-single-voicing-actions > \.vl-row-apply\s*\{[^}]*align-self:\s*flex-start;/s);
   assert.match(library, /className="vl-library-card-actions vl-single-voicing-actions"/);
+  assert.match(
+    library,
+    /onClick=\{\(\) => playVoicing\(voicing\)\}[\s\S]*showTapLabel=\{false\}/,
+  );
   assert.doesNotMatch(explorer, /\.vl-play-control\.has-tap \.vl-row-apply/);
   assert.match(library, /▶ Play"}[\s\S]*>\s*Restore\s*<\/button>/);
   assert.match(

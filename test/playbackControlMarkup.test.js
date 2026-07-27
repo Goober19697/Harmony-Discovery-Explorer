@@ -27,7 +27,11 @@ test("all application voicing and progression playback controls use the shared c
   assert.equal((explorer.match(/<PlaybackControl/g) || []).length, 6);
   assert.equal((library.match(/<PlaybackControl/g) || []).length, 2);
   assert.equal((explorer.match(/showTapLabel=\{false\}/g) || []).length, 1);
-  assert.equal((library.match(/showTapLabel=\{false\}/g) || []).length, 1);
+  assert.equal((library.match(/showTapLabel=\{false\}/g) || []).length, 2);
+  assert.match(
+    library,
+    /onClick=\{\(\) => playVoicing\(voicing\)\}[\s\S]*?showTapLabel=\{false\}/,
+  );
   assert.match(
     explorer,
     /onClick=\{playProgression\}[\s\S]*?showTapLabel=\{false\}/,

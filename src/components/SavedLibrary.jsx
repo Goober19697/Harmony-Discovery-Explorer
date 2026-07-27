@@ -391,6 +391,7 @@ export default function SavedLibrary({
                       onClick={() => playVoicing(voicing)}
                       disabled={playingVoicingId !== null}
                       ariaLabel={`Play ${voicing.chord_name || "custom"} voicing`}
+                      showTapLabel={false}
                     >
                       {playingVoicingId === voicing.id ? "Playing…" : "▶ Play"}
                     </PlaybackControl>
