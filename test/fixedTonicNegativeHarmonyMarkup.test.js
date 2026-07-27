@@ -20,7 +20,7 @@ test("the piano and existing analyzer receive the transformed MIDI sequence", as
     source,
     /tonicNegativeHarmony\(currentNotes, negativeReference\?\.pitchClass\)/,
   );
-  assert.match(source, /analyzeVoicing\(negativeAnalysisNotes\)/);
+  assert.match(source, /analyzeNegativeHarmonyVoicing\(negativeAnalysisNotes\)/);
   assert.match(source, /<PianoKeys\s+midis=\{derivedNegativeNotes\}/s);
 });
 

@@ -25,7 +25,12 @@ import {
   nextCandidateIndex,
   previousCandidateIndex,
 } from "./candidatePool.js";
-import { analyzeVoicing, analyzeVoicingOptions, QUALITIES } from "./chordPatterns.js";
+import {
+  analyzeNegativeHarmonyVoicing,
+  analyzeVoicing,
+  analyzeVoicingOptions,
+  QUALITIES,
+} from "./chordPatterns.js";
 import { checkBackendHealth, saveProgression, saveVoicing } from "./services/api";
 import SavedLibrary from "./components/SavedLibrary.jsx";
 import { useAuth } from "./auth/AuthContext.jsx";
@@ -129,6 +134,13 @@ function labelForNotes(midis, flats) {
   if (!a) return null;
   const names = flats ? FLAT_NAMES : SHARP_NAMES;
   return names[a.rootPc] + a.suffix + (a.rootless ? " (rootless)" : "");
+}
+
+function labelForAnalysis(analysis, flats) {
+  if (!analysis) return null;
+  const names = flats ? FLAT_NAMES : SHARP_NAMES;
+  return names[analysis.rootPc] + analysis.suffix +
+    (analysis.rootless ? " (rootless)" : "");
 }
 
 function labelsForNotes(midis, flats) {
@@ -638,7 +650,7 @@ async function handleSaveProgression() {
     [derivedNegativeNotes],
   );
   const derivedNegativeAnalysis = useMemo(
-    () => analyzeVoicing(negativeAnalysisNotes),
+    () => analyzeNegativeHarmonyVoicing(negativeAnalysisNotes),
     [negativeAnalysisNotes],
   );
   const derivedNegativeUsesFlats = inferUseFlats(
@@ -646,8 +658,8 @@ async function handleSaveProgression() {
     derivedNegativeAnalysis?.rootPc,
   );
   const derivedNegativeLabel = useMemo(
-    () => labelForNotes(negativeAnalysisNotes, derivedNegativeUsesFlats),
-    [negativeAnalysisNotes, derivedNegativeUsesFlats],
+    () => labelForAnalysis(derivedNegativeAnalysis, derivedNegativeUsesFlats),
+    [derivedNegativeAnalysis, derivedNegativeUsesFlats],
   );
   const derivedNegativeIntervalQualities = useMemo(
     () => intervalQualitiesForAnalysis(derivedNegativeAnalysis),

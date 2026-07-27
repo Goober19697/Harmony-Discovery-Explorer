@@ -67,6 +67,7 @@ const QUALITIES = [
   ["maj13",   [0,4,7,11,2,9]],
   ["maj13♯11",[0,4,7,11,2,6,9]],
   ["13",      [0,4,7,10,2,9]],
+  ["7#5",     [0,4,8,10]],
   ["7♭9",     [0,4,7,10,1]],
   ["7♯9",     [0,4,7,10,3]],
   ["maj7♯11", [0,4,7,11,6]],
@@ -234,7 +235,7 @@ function analyzeVoicingOptions(midis, { includeUnplayedRoots = false } = {}) {
   if (includeUnplayedRoots) return options;
 
   const enteredRootOptions = options.filter(option => pcs.has(option.rootPc));
-  if (enteredRootOptions.some(option => option.rootPc === bassPc)) return enteredRootOptions;
+  if (enteredRootOptions.length > 0) return enteredRootOptions;
   const intervalNames = ["", "♭9", "9", "♭3", "3", "11", "♯11", "5", "♭13", "13", "♭7", "maj7"];
   const relativeIntervals = [...pcs]
     .map(pc => (pc - bassPc + 12) % 12)
@@ -254,11 +255,28 @@ function analyzeVoicing(midis) {
   return analyzeVoicingOptions(midis)[0] || null;
 }
 
+function analyzeNegativeHarmonyVoicing(midis) {
+  const pcs = new Set((midis || []).map(midi => ((midi % 12) + 12) % 12));
+  const conventional = analyzeVoicingOptions(midis, { includeUnplayedRoots: true })
+    .filter(option => !option.fallback && pcs.has(option.rootPc))[0];
+  if (!conventional) return analyzeVoicing(midis);
+  return conventional.suffix === "7#5"
+    ? { ...conventional, suffix: "11#5" }
+    : conventional;
+}
+
 function labelForNotes(midis, flats) {
   const a = analyzeVoicing(midis);
   if (!a) return null;
   const names = flats ? FLAT_NAMES : SHARP_NAMES;
   return names[a.rootPc] + a.suffix + (a.rootless ? " (rootless)" : "");
+}
+
+function labelForAnalysis(analysis, flats) {
+  if (!analysis) return null;
+  const names = flats ? FLAT_NAMES : SHARP_NAMES;
+  return names[analysis.rootPc] + analysis.suffix +
+    (analysis.rootless ? " (rootless)" : "");
 }
 
 function labelsForNotes(midis, flats) {
@@ -715,14 +733,14 @@ function HarmonyDiscoveryExplorer() {
     [derivedNegativeNotes],
   );
   const derivedNegativeAnalysis = useMemo(
-    () => analyzeVoicing(negativeAnalysisNotes),
+    () => analyzeNegativeHarmonyVoicing(negativeAnalysisNotes),
     [negativeAnalysisNotes],
   );
   const derivedNegativeUsesFlats = /[b♭]/.test(negativeReference?.name || "") ||
     [1, 3, 5, 6, 8, 10].includes(derivedNegativeAnalysis?.rootPc);
   const derivedNegativeLabel = useMemo(
-    () => labelForNotes(negativeAnalysisNotes, derivedNegativeUsesFlats),
-    [negativeAnalysisNotes, derivedNegativeUsesFlats],
+    () => labelForAnalysis(derivedNegativeAnalysis, derivedNegativeUsesFlats),
+    [derivedNegativeAnalysis, derivedNegativeUsesFlats],
   );
   const derivedNegativeIntervalQualities = useMemo(
     () => intervalQualitiesForAnalysis(derivedNegativeAnalysis),

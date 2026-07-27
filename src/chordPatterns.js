@@ -35,7 +35,12 @@ export const CHORD_PATTERNS = [
   { suffix: "maj13♯11", intervals: [0, 4, 7, 11, 2, 6, 9] },
   { suffix: "13", intervals: [0, 4, 7, 10, 2, 9] },
   { suffix: "7b5", intervals: [0, 4, 6, 10], requiresRoot: true },
-  { suffix: "7#5", intervals: [0, 4, 8, 10], requiresRoot: true },
+  {
+    suffix: "7#5",
+    intervals: [0, 4, 8, 10],
+    requiresRoot: true,
+    negativeHarmonySuffix: "11#5",
+  },
   { suffix: "7b9", intervals: [0, 4, 7, 10, 1], requiresRoot: true },
   { suffix: "7#9", intervals: [0, 4, 7, 10, 3], requiresRoot: true },
   { suffix: "7b5b9", intervals: [0, 4, 6, 10, 1], requiresRoot: true },
@@ -58,7 +63,12 @@ export function analyzeVoicingOptions(midis, { includeUnplayedRoots = false } = 
   for (let root = 0; root < 12; root++) {
     const fifthPc = (root + 7) % 12;
     let bestForRoot = null;
-    for (const { suffix, intervals, requiresRoot = false } of CHORD_PATTERNS) {
+    for (const {
+      suffix,
+      intervals,
+      requiresRoot = false,
+      negativeHarmonySuffix = null,
+    } of CHORD_PATTERNS) {
       const chordSet = new Set(intervals.map(interval => (root + interval) % 12));
       if ([...pcs].some(pc => !chordSet.has(pc))) continue;
 
@@ -83,6 +93,7 @@ export function analyzeVoicingOptions(midis, { includeUnplayedRoots = false } = 
         bestForRoot = {
           rootPc: root,
           suffix,
+          negativeHarmonySuffix,
           rootless: missingRoot,
           hasPlayedThird,
           hasPlayedSeventh,
@@ -133,6 +144,16 @@ export function analyzeVoicingOptions(midis, { includeUnplayedRoots = false } = 
 
 export function analyzeVoicing(midis) {
   return analyzeVoicingOptions(midis)[0] || null;
+}
+
+export function analyzeNegativeHarmonyVoicing(midis) {
+  const pcs = new Set((midis || []).map(midi => ((midi % 12) + 12) % 12));
+  const conventional = analyzeVoicingOptions(midis, { includeUnplayedRoots: true })
+    .filter(option => !option.fallback && pcs.has(option.rootPc))[0];
+  if (!conventional) return analyzeVoicing(midis);
+  return conventional.negativeHarmonySuffix
+    ? { ...conventional, suffix: conventional.negativeHarmonySuffix }
+    : conventional;
 }
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];

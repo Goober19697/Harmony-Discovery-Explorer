@@ -1,7 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { chordLabel, chordLabels, CHORD_PATTERNS, QUALITIES } from "../src/chordPatterns.js";
+import {
+  analyzeNegativeHarmonyVoicing,
+  chordLabel,
+  chordLabels,
+  CHORD_PATTERNS,
+  QUALITIES,
+} from "../src/chordPatterns.js";
 import { parseVoicing } from "../src/noteParsing.js";
 
 function label(notes) {
@@ -147,4 +153,14 @@ test("an interval-list analysis is used only when no conventional name exists", 
   const labels = chordLabels(parseVoicing("C Db D G").midis);
   assert.match(labels[0], /^C\(/);
   assert.notEqual(labels[0], "Custom voicing");
+});
+
+test("Negative Harmony naming prefers a conventional extended altered chord", () => {
+  const notes = parseVoicing("E3 F#3 G#3 C4").midis;
+  const analysis = analyzeNegativeHarmonyVoicing(notes);
+
+  assert.equal(analysis.rootPc, 8);
+  assert.equal(analysis.suffix, "11#5");
+  assert.equal(analysis.fallback, undefined);
+  assert.equal(chordLabel(notes), "G#7#5");
 });
