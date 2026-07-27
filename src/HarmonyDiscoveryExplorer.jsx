@@ -909,7 +909,7 @@ async function handleSaveProgression() {
       {
         text,
         label: negativeHarmonyLabel(negativeNotes),
-        emotion: "Negative Harmony",
+        emotion: "Shadow Voicing",
       },
     ]);
     setError(null);
@@ -1886,7 +1886,7 @@ async function handleSaveProgression() {
                     onClick={() => setShowNegativeHarmony(show => !show)}
                     aria-expanded={showNegativeHarmony}
                   >
-                    Show Negative Harmony
+                    Show Shadow Voicing
                   </button>
                   <div className="vl-play-group">
                     <button
@@ -1938,7 +1938,7 @@ async function handleSaveProgression() {
                         <button
                           className="vl-play-btn"
                           onClick={() => playChord(negativeNotes, "negative")}
-                          aria-label="Play negative harmony voicing"
+                          aria-label="Play shadow voicing"
                           type="button"
                         >
                           {playingKey === "negative" ? "■" : "▶"}

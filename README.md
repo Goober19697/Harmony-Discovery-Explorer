@@ -1,6 +1,6 @@
 # Harmony Discovery Explorer
 
-Harmony Discovery Explorer is a full-stack web application for exploring chord voicings, negative harmony, and harmonic progressions. Built with React, Flask, PostgreSQL, Docker, and GitHub Actions.
+Harmony Discovery Explorer is a full-stack web application for exploring chord voicings, shadow voicings, and harmonic progressions. Built with React, Flask, PostgreSQL, Docker, and GitHub Actions.
 
 ## Live Demo
 
@@ -8,16 +8,12 @@ Harmony Discovery Explorer is a full-stack web application for exploring chord v
 
 > The application is currently hosted on AWS EC2. Because the deployment currently uses the instance public IP rather than a domain, the address may change if the instance is stopped and restarted.
 
-## Screenshot
-
-![Harmony Discovery Explorer interface](docs/hero3.png)
-
 ## Features
 
 - Interactive chord exploration
 - Automatic chord naming
 - Voice-leading suggestions
-- Negative harmony generation
+- Shadow voicing exploration
 - Save voicings
 - Save progressions
 - Multi-user authentication

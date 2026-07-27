@@ -2,7 +2,7 @@
   "name": "harmony-discovery-explorer",
   "private": true,
   "version": "1.0.0",
-  "description": "A piano-based harmony discovery tool for exploring chord colors, bass motion, alternate analyses, negative harmony, and playable progressions.",
+  "description": "A piano-based harmony discovery tool for exploring chord colors, bass motion, alternate analyses, shadow voicings, and playable progressions.",
   "type": "module",
   "scripts": {
     "test": "node --test",

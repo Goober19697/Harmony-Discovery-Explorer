@@ -398,7 +398,7 @@ function negativeHarmonyAnalysis(midis) {
 
 function negativeHarmonyLabel(midis) {
   const recognized = negativeHarmonyAnalysis(midis);
-  if (!recognized) return "Negative harmony";
+  if (!recognized) return "Shadow voicing";
   return CONVENTIONAL_ROOT_NAMES[recognized.rootPc] + recognized.suffix +
     (recognized.rootless ? " (rootless)" : "");
 }
@@ -1570,7 +1570,7 @@ function HarmonyDiscoveryExplorer() {
                     onClick={() => setShowNegativeHarmony(show => !show)}
                     aria-expanded={showNegativeHarmony}
                   >
-                    Show Negative Harmony
+                    Show Shadow Voicing
                   </button>
                   <div className="vl-play-group">
                     <button
@@ -1602,7 +1602,7 @@ function HarmonyDiscoveryExplorer() {
                         <button
                           className="vl-play-btn"
                           onClick={() => playChord(negativeNotes, "negative")}
-                          aria-label="Play negative harmony voicing"
+                          aria-label="Play shadow voicing"
                           type="button"
                         >
                           {playingKey === "negative" ? "■" : "▶"}

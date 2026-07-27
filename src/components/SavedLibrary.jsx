@@ -28,6 +28,11 @@ function savedDate(value) {
     : new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
 }
 
+function displayVoicingContext(value) {
+  if (typeof value !== "string") return value;
+  return value.replace(/^negative harmony\b/i, "Shadow Voicing");
+}
+
 export default function SavedLibrary({
   onRestoreVoicing,
   onRestoreProgression,
@@ -320,7 +325,7 @@ export default function SavedLibrary({
               >
                 <option value="all">All categories</option>
                 {voicingCategories(voicings).map(category => (
-                  <option value={category} key={category}>{category}</option>
+                  <option value={category} key={category}>{displayVoicingContext(category)}</option>
                 ))}
               </select>
             ) : (
@@ -380,7 +385,9 @@ export default function SavedLibrary({
                   <div className="vl-library-notes">
                     {formatOrderedNotes(voicing.notes) || "Notes unavailable"}
                   </div>
-                  <div className="vl-library-meta">{voicing.emotion || "Uncategorized"}</div>
+                  <div className="vl-library-meta">
+                    {displayVoicingContext(voicing.emotion) || "Uncategorized"}
+                  </div>
                   <div className="vl-library-card-actions">
                     <button
                       className="vl-row-apply"
