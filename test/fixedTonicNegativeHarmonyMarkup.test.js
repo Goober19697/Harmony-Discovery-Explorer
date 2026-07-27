@@ -28,7 +28,7 @@ test("each Negative Harmony result displays its interpretation and analysis", as
   const source = await readFile(explorerUrl, "utf8");
 
   assert.match(source, /negativeHarmonyResults\.map\(result =>/);
-  assert.match(source, /Negative Harmony · \{result\.explanation\}/);
+  assert.match(source, /Negative Harmony — \{result\.explanation\}/);
   assert.match(source, /\{result\.chordName \|\| "Custom voicing"\}/);
   assert.match(source, /Interval qualities: \{result\.intervalQualities\}/);
 });
@@ -49,7 +49,7 @@ test("Negative Harmony actions snapshot transformed notes and preserve metadata"
 
   assert.match(
     source,
-    /function addDerivedNegativeHarmony\(result\)[\s\S]*const exactNotes = result\.notes\.slice\(\);[\s\S]*label: result\.chordName,[\s\S]*midi_notes: exactNotes,[\s\S]*interval_qualities: result\.intervalQualities,[\s\S]*negative_harmony_function: result\.functionLabel,[\s\S]*negative_harmony_tonic: result\.impliedTonicName,/,
+    /function addDerivedNegativeHarmony\(result\)[\s\S]*const exactNotes = result\.notes\.slice\(\);[\s\S]*label: result\.chordName,[\s\S]*midi_notes: exactNotes,[\s\S]*interval_qualities: result\.intervalQualities,[\s\S]*negative_harmony_function: result\.romanNumeral,[\s\S]*negative_harmony_tonic: result\.impliedTonicName,/,
   );
   assert.match(
     source,
@@ -59,6 +59,17 @@ test("Negative Harmony actions snapshot transformed notes and preserve metadata"
     source,
     /handleSaveVoicing\(\s*currentNotes,\s*result\.chordName/,
   );
+});
+
+test("interpretation headings preserve chord-symbol and Roman-numeral casing", async () => {
+  const source = await readFile(explorerUrl, "utf8");
+
+  assert.match(source, /className="vl-negative-interpretation"/);
+  assert.match(
+    source,
+    /\.vl-negative-interpretation\s*\{[^}]*text-transform:\s*none;/s,
+  );
+  assert.doesNotMatch(source, /result\.explanation\.toUpperCase/);
 });
 
 test("Negative Harmony controls disable invalid or repeated submissions", async () => {

@@ -665,7 +665,7 @@ async function handleSaveProgression() {
       );
       const chordName = labelForAnalysis(analysis, useResultFlats);
       const intervalQualities = intervalQualitiesForAnalysis(analysis);
-      const id = `${interpretation.functionLabel}-${interpretation.impliedTonicPitchClass}`;
+      const id = `${interpretation.functionDegree}-${interpretation.impliedTonicPitchClass}`;
       return {
         ...interpretation,
         id,
@@ -1020,7 +1020,7 @@ async function handleSaveProgression() {
         emotion: result.metadata,
         midi_notes: exactNotes,
         interval_qualities: result.intervalQualities,
-        negative_harmony_function: result.functionLabel,
+        negative_harmony_function: result.romanNumeral,
         negative_harmony_tonic: result.impliedTonicName,
       },
     ]);
@@ -1217,6 +1217,12 @@ async function handleSaveProgression() {
           font-family: 'JetBrains Mono', monospace;
           font-size: 9px; font-weight: 600; letter-spacing: 0.14em;
           text-transform: uppercase;
+        }
+        .vl-negative-interpretation {
+          margin-bottom: 6px; color: var(--brass);
+          font-family: 'Inter', sans-serif;
+          font-size: 11px; font-weight: 600; letter-spacing: 0;
+          text-transform: none;
         }
         .vl-piano-wrap {
           margin-top: 12px;
@@ -2120,8 +2126,8 @@ async function handleSaveProgression() {
                 const isSaving = negativeHarmonySavingIds.has(result.id);
                 return (
                   <div className="vl-negative-shadow" key={result.id}>
-                    <div className="vl-negative-kicker">
-                      Negative Harmony · {result.explanation}
+                    <div className="vl-negative-interpretation">
+                      Negative Harmony — {result.explanation}
                     </div>
                     <div className="vl-current-row">
                       <div>

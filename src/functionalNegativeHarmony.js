@@ -7,22 +7,35 @@ function pitchClass(value) {
   return ((value % 12) + 12) % 12;
 }
 
-function interpretation(sourceChordName, sourceChordRoot, functionLabel, tonicPitchClass) {
+function interpretation(
+  sourceChordName,
+  sourceChordRoot,
+  sourceQuality,
+  functionDegree,
+  romanNumeral,
+  tonicPitchClass,
+) {
   const impliedTonicPitchClass = pitchClass(tonicPitchClass);
   const impliedTonicName = TONIC_NAMES[impliedTonicPitchClass];
   return {
-    functionLabel,
+    sourceChordName,
     sourceChordRoot,
+    sourceQuality,
+    functionDegree,
+    romanNumeral,
     impliedTonicName,
     impliedTonicPitchClass,
-    explanation: `${sourceChordName} interpreted as ${functionLabel} of ${impliedTonicName}`,
+    explanation: `${sourceChordName} interpreted as ${romanNumeral} of ${impliedTonicName}`,
   };
 }
 
 function qualityFamily(quality) {
   const normalized = typeof quality === "string" ? quality.trim() : "";
 
-  if (["dim", "dim7", "m7b5", "m7♭5", "ø7"].includes(normalized)) {
+  if (["m7b5", "m7♭5", "ø7"].includes(normalized)) {
+    return "half-diminished";
+  }
+  if (["dim", "dim7"].includes(normalized)) {
     return "diminished";
   }
   if (
@@ -60,36 +73,41 @@ export function functionalNegativeHarmonyInterpretations({
   }
 
   const root = pitchClass(sourceRootPitchClass);
-  const make = (functionLabel, tonic) =>
+  const sourceQuality = qualityFamily(quality);
+  const make = (functionDegree, romanNumeral, tonic) =>
     interpretation(
       sourceChordName.trim(),
       sourceChordRoot.trim(),
-      functionLabel,
+      sourceQuality,
+      functionDegree,
+      romanNumeral,
       tonic,
     );
 
-  switch (qualityFamily(quality)) {
+  switch (sourceQuality) {
     case "dominant":
-      return [make("V", root + 5)];
+      return [make(5, "V", root + 5)];
     case "major":
       return [
-        make("I", root),
-        make("IV", root - 5),
-        make("V", root + 5),
+        make(1, "I", root),
+        make(4, "IV", root - 5),
+        make(5, "V", root + 5),
       ];
     case "major-seventh":
       return [
-        make("I", root),
-        make("IV", root - 5),
+        make(1, "I", root),
+        make(4, "IV", root - 5),
       ];
     case "minor":
       return [
-        make("ii", root - 2),
-        make("iii", root - 4),
-        make("vi", root + 3),
+        make(2, "ii", root - 2),
+        make(3, "iii", root - 4),
+        make(6, "vi", root + 3),
       ];
     case "diminished":
-      return [make("vii", root + 1)];
+      return [make(7, "vii°", root + 1)];
+    case "half-diminished":
+      return [make(7, "viiø7", root + 1)];
     default:
       return [];
   }

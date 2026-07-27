@@ -14,8 +14,9 @@ function interpretations(sourceChordName, sourceChordRoot, sourceRootPitchClass,
 }
 
 function summary(results) {
-  return results.map(({ functionLabel, impliedTonicName, impliedTonicPitchClass }) => ({
-    functionLabel,
+  return results.map(({ functionDegree, romanNumeral, impliedTonicName, impliedTonicPitchClass }) => ({
+    functionDegree,
+    romanNumeral,
     impliedTonicName,
     impliedTonicPitchClass,
   }));
@@ -23,41 +24,59 @@ function summary(results) {
 
 test("dominant quality produces V only", () => {
   assert.deepEqual(summary(interpretations("A7#5#9", "A", 9, "7#5#9")), [
-    { functionLabel: "V", impliedTonicName: "D", impliedTonicPitchClass: 2 },
+    { functionDegree: 5, romanNumeral: "V", impliedTonicName: "D", impliedTonicPitchClass: 2 },
   ]);
+  assert.equal(
+    interpretations("A7#5#9", "A", 9, "7#5#9")[0].explanation,
+    "A7#5#9 interpreted as V of D",
+  );
 });
 
 test("major triads produce I, IV, and V interpretations", () => {
-  assert.deepEqual(summary(interpretations("F", "F", 5, "")), [
-    { functionLabel: "I", impliedTonicName: "F", impliedTonicPitchClass: 5 },
-    { functionLabel: "IV", impliedTonicName: "C", impliedTonicPitchClass: 0 },
-    { functionLabel: "V", impliedTonicName: "Bb", impliedTonicPitchClass: 10 },
+  const results = interpretations("A", "A", 9, "");
+  assert.deepEqual(summary(results), [
+    { functionDegree: 1, romanNumeral: "I", impliedTonicName: "A", impliedTonicPitchClass: 9 },
+    { functionDegree: 4, romanNumeral: "IV", impliedTonicName: "E", impliedTonicPitchClass: 4 },
+    { functionDegree: 5, romanNumeral: "V", impliedTonicName: "D", impliedTonicPitchClass: 2 },
+  ]);
+  assert.deepEqual(results.map(result => result.explanation), [
+    "A interpreted as I of A",
+    "A interpreted as IV of E",
+    "A interpreted as V of D",
   ]);
 });
 
 test("major-seventh family produces I and IV only", () => {
   const results = interpretations("Fmaj9", "F", 5, "maj9");
   assert.deepEqual(summary(results), [
-    { functionLabel: "I", impliedTonicName: "F", impliedTonicPitchClass: 5 },
-    { functionLabel: "IV", impliedTonicName: "C", impliedTonicPitchClass: 0 },
+    { functionDegree: 1, romanNumeral: "I", impliedTonicName: "F", impliedTonicPitchClass: 5 },
+    { functionDegree: 4, romanNumeral: "IV", impliedTonicName: "C", impliedTonicPitchClass: 0 },
   ]);
   assert.equal(results[1].explanation, "Fmaj9 interpreted as IV of C");
 });
 
 test("minor family produces ii, iii, and vi interpretations", () => {
-  assert.deepEqual(summary(interpretations("Dm7", "D", 2, "m7")), [
-    { functionLabel: "ii", impliedTonicName: "C", impliedTonicPitchClass: 0 },
-    { functionLabel: "iii", impliedTonicName: "Bb", impliedTonicPitchClass: 10 },
-    { functionLabel: "vi", impliedTonicName: "F", impliedTonicPitchClass: 5 },
+  const results = interpretations("Am9", "A", 9, "m9");
+  assert.deepEqual(summary(results), [
+    { functionDegree: 2, romanNumeral: "ii", impliedTonicName: "G", impliedTonicPitchClass: 7 },
+    { functionDegree: 3, romanNumeral: "iii", impliedTonicName: "F", impliedTonicPitchClass: 5 },
+    { functionDegree: 6, romanNumeral: "vi", impliedTonicName: "C", impliedTonicPitchClass: 0 },
+  ]);
+  assert.deepEqual(results.map(result => result.explanation), [
+    "Am9 interpreted as ii of G",
+    "Am9 interpreted as iii of F",
+    "Am9 interpreted as vi of C",
   ]);
 });
 
 test("diminished and half-diminished roots produce vii only", () => {
-  for (const [name, quality] of [["Bdim", "dim"], ["Bm7b5", "m7b5"]]) {
-    assert.deepEqual(summary(interpretations(name, "B", 11, quality)), [
-      { functionLabel: "vii", impliedTonicName: "C", impliedTonicPitchClass: 0 },
-    ]);
-  }
+  const diminished = interpretations("Bdim", "B", 11, "dim")[0];
+  const halfDiminished = interpretations("Bm7b5", "B", 11, "m7b5")[0];
+
+  assert.equal(diminished.romanNumeral, "vii°");
+  assert.equal(diminished.explanation, "Bdim interpreted as vii° of C");
+  assert.equal(halfDiminished.romanNumeral, "viiø7");
+  assert.equal(halfDiminished.explanation, "Bm7b5 interpreted as viiø7 of C");
 });
 
 test("unsupported qualities do not produce standard interpretations", () => {
@@ -67,17 +86,29 @@ test("unsupported qualities do not produce standard interpretations", () => {
   assert.deepEqual(interpretations("Custom Voicing", "", 0, ""), []);
 });
 
+test("interpretations preserve analyzed minor casing and accidental spelling", () => {
+  const flatResults = interpretations("Bbm7", "Bb", 10, "m7");
+  const sharpResults = interpretations("C#m7", "C#", 1, "m7");
+
+  assert.equal(flatResults[0].sourceChordName, "Bbm7");
+  assert.equal(flatResults[0].sourceChordRoot, "Bb");
+  assert.equal(flatResults[0].sourceQuality, "minor");
+  assert.equal(flatResults[0].explanation, "Bbm7 interpreted as ii of Ab");
+  assert.equal(sharpResults[0].sourceChordName, "C#m7");
+  assert.ok(sharpResults.every(result => !/[A-Z]M7/.test(result.explanation)));
+});
+
 test("each interpretation produces its own ordered, octave-preserving transformation", () => {
   const original = [57, 64, 65, 67, 72];
   const snapshot = original.slice();
   const results = interpretations("Fmaj9", "F", 5, "maj9").map(item => ({
-    functionLabel: item.functionLabel,
+    romanNumeral: item.romanNumeral,
     notes: tonicNegativeHarmony(original, item.impliedTonicPitchClass),
   }));
 
   assert.deepEqual(results, [
-    { functionLabel: "I", notes: [56, 61, 60, 70, 77] },
-    { functionLabel: "IV", notes: [58, 63, 62, 72, 67] },
+    { romanNumeral: "I", notes: [56, 61, 60, 70, 77] },
+    { romanNumeral: "IV", notes: [58, 63, 62, 72, 67] },
   ]);
   assert.equal(results[0].notes.length, original.length);
   assert.equal(results[1].notes.length, original.length);
