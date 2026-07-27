@@ -32,7 +32,8 @@ export function negativeHarmonyAnalysis(midis) {
 export function negativeHarmonyLabel(midis) {
   const recognized = negativeHarmonyAnalysis(midis);
   if (!recognized) return "Shadow voicing";
-  return CONVENTIONAL_ROOT_NAMES[recognized.rootPc] + recognized.suffix +
+  const suffix = recognized.negativeHarmonySuffix || recognized.suffix;
+  return CONVENTIONAL_ROOT_NAMES[recognized.rootPc] + suffix +
     (recognized.rootless ? " (rootless)" : "");
 }
 

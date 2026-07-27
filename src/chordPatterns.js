@@ -32,6 +32,11 @@ export const CHORD_PATTERNS = [
   { suffix: "6/9♯11", intervals: [0, 4, 7, 9, 2, 6] },
   { suffix: "m6/9", intervals: [0, 3, 7, 9, 2] },
   { suffix: "maj9", intervals: [0, 4, 7, 11, 2] },
+  {
+    suffix: "maj7#11",
+    intervals: [0, 4, 7, 11, 2, 6],
+    negativeHarmonySuffix: "maj9#11",
+  },
   { suffix: "maj9#5", intervals: [0, 4, 8, 11, 2] },
   { suffix: "maj11#5", intervals: [0, 4, 8, 11, 2, 5] },
   { suffix: "maj13#5", intervals: [0, 4, 8, 11, 2, 5, 9] },
@@ -48,6 +53,14 @@ export const CHORD_PATTERNS = [
   { suffix: "maj13", intervals: [0, 4, 7, 11, 2, 9] },
   { suffix: "maj13♯11", intervals: [0, 4, 7, 11, 2, 6, 9] },
   { suffix: "13", intervals: [0, 4, 7, 10, 2, 9] },
+  // Full dominant-thirteenth color with the 11th present. The shared analyzer
+  // may still omit the fifth, as in many practical six-note voicings.
+  { suffix: "13", intervals: [0, 4, 7, 10, 2, 5, 9] },
+  {
+    suffix: "13",
+    intervals: [0, 4, 10, 2, 5, 9],
+    recognitionPriority: -1,
+  },
   { suffix: "13#5", intervals: [0, 4, 8, 10, 2, 9], requiresRoot: true },
   { suffix: "7b5", intervals: [0, 4, 6, 10], requiresRoot: true },
   {
@@ -83,6 +96,7 @@ export function analyzeVoicingOptions(midis, { includeUnplayedRoots = false } = 
       intervals,
       requiresRoot = false,
       negativeHarmonySuffix = null,
+      recognitionPriority = 0,
     } of CHORD_PATTERNS) {
       const chordSet = new Set(intervals.map(interval => (root + interval) % 12));
       if ([...pcs].some(pc => !chordSet.has(pc))) continue;
@@ -112,6 +126,7 @@ export function analyzeVoicingOptions(midis, { includeUnplayedRoots = false } = 
           rootless: missingRoot,
           hasPlayedThird,
           hasPlayedSeventh,
+          recognitionPriority,
           score,
         };
       }
@@ -130,7 +145,8 @@ export function analyzeVoicingOptions(midis, { includeUnplayedRoots = false } = 
     const bBass = b.rootPc === bassPc ? 0 : 1;
     return aThirdAndSeventh - bThirdAndSeventh ||
       a.score[0] - b.score[0] || aThird - bThird || aSeventh - bSeventh ||
-      aBass - bBass || a.score[1] - b.score[1];
+      aBass - bBass || a.recognitionPriority - b.recognitionPriority ||
+      a.score[1] - b.score[1];
   });
   if (includeUnplayedRoots) return options;
 

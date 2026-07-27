@@ -67,7 +67,10 @@ function qualityFamily(quality) {
   if (["", "6", "6/9", "add9", "add11"].includes(normalized)) {
     return "major";
   }
-  if (["maj7", "maj9", "maj11", "maj13", "maj7♯11", "maj13♯11"].includes(normalized)) {
+  if ([
+    "maj7", "maj9", "maj11", "maj13",
+    "maj7#11", "maj9#11", "maj7♯11", "maj13♯11",
+  ].includes(normalized)) {
     return "major-seventh";
   }
   if (["m", "m6", "m7", "m9", "m11", "m13", "m add9", "m6/9"].includes(normalized)) {
