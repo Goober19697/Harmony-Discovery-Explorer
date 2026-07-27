@@ -209,8 +209,12 @@ const SUFFIX_CATEGORY = {
   "aug maj7": "dreamy",
   "maj7♯11":  "dreamy",
   "7♯11":     "dreamy",
-  "m(maj7)":  "dreamy",
-  "m(maj7)b5":"dreamy",
+  "mMaj7":     "dreamy",
+  "mMaj7b5":   "dreamy",
+  "mMaj9":     "dreamy",
+  "mMaj11":    "dreamy",
+  "mMaj13":    "dreamy",
+  "mMaj7(add13)":"dreamy",
 };
 
 // emotional character of each chord quality
@@ -231,8 +235,12 @@ const QUALITY_MOOD = {
   "m7":       "mellow, conversational",
   "m7b5":     "anxious, searching",
   "dim7":     "coiled tension",
-  "m(maj7)":  "uneasy beauty, noir",
-  "m(maj7)b5":"uneasy beauty, noir",
+  "mMaj7":     "uneasy beauty, noir",
+  "mMaj7b5":   "uneasy beauty, noir",
+  "mMaj9":     "uneasy beauty, noir",
+  "mMaj11":    "uneasy beauty, noir",
+  "mMaj13":    "uneasy beauty, noir",
+  "mMaj7(add13)":"uneasy beauty, noir",
   "aug maj7": "surreal shimmer",
   "6/9":      "plush, contented",
   "6/9♯11":   "luminous, open-ended",
@@ -288,7 +296,16 @@ function PianoKeys({
   midis,
   flats = false,
   ariaLabel = "Piano keyboard showing the current voicing",
+  onNotePlay,
 }) {
+  const [activeMidis, setActiveMidis] = useState(() => new Set());
+  const activeTimeoutsRef = useRef(new Map());
+
+  useEffect(() => () => {
+    activeTimeoutsRef.current.forEach(clearTimeout);
+    activeTimeoutsRef.current.clear();
+  }, []);
+
   if (!midis || midis.length === 0) return null;
   const pressed = new Set(midis);
   // range: full octaves spanning the voicing, minimum two octaves for looks
@@ -321,31 +338,74 @@ function PianoKeys({
     : 0;
   const referenceY = referenceWhite ? WK_H - 7 : BK_H - 6;
 
+  function activateAndPlay(midi) {
+    const existingTimeout = activeTimeoutsRef.current.get(midi);
+    if (existingTimeout) clearTimeout(existingTimeout);
+    setActiveMidis(active => new Set(active).add(midi));
+    activeTimeoutsRef.current.set(midi, setTimeout(() => {
+      setActiveMidis(active => {
+        const next = new Set(active);
+        next.delete(midi);
+        return next;
+      });
+      activeTimeoutsRef.current.delete(midi);
+    }, 180));
+    onNotePlay?.(midi);
+  }
+
+  function interactionProps(midi) {
+    return {
+      className: "vl-piano-key",
+      role: "button",
+      tabIndex: 0,
+      "aria-label": `Play ${midiToName(midi, flats)}`,
+      onPointerDown: event => {
+        if (event.pointerType === "mouse" && event.button !== 0) return;
+        event.preventDefault();
+        activateAndPlay(midi);
+      },
+      onKeyDown: event => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        if (!event.repeat) activateAndPlay(midi);
+      },
+      style: {
+        cursor: "pointer",
+        touchAction: "manipulation",
+        userSelect: "none",
+      },
+    };
+  }
+
   return (
     <svg
       className="vl-piano"
       viewBox={`0 0 ${width} ${WK_H}`}
       width="100%"
       style={{ maxWidth: width, display: "block" }}
-      role="img"
+      role="group"
       aria-label={ariaLabel}
     >
       {whites.map(k => (
         <rect
+          {...interactionProps(k.m)}
           key={k.m}
           x={k.x} y={0} width={WK_W - 1} height={WK_H}
           rx={2.5}
           fill={pressed.has(k.m) ? "#C98A3A" : "#EDE6D6"}
-          stroke="#1B1D2A" strokeWidth="1"
+          stroke={activeMidis.has(k.m) ? "#F6D18A" : "#1B1D2A"}
+          strokeWidth={activeMidis.has(k.m) ? 3 : 1}
         />
       ))}
       {blacks.map(k => (
         <rect
+          {...interactionProps(k.m)}
           key={k.m}
           x={k.x} y={0} width={BK_W} height={BK_H}
           rx={2}
           fill={pressed.has(k.m) ? "#C98A3A" : "#2A2D4A"}
-          stroke="#1B1D2A" strokeWidth="1"
+          stroke={activeMidis.has(k.m) ? "#F6D18A" : "#1B1D2A"}
+          strokeWidth={activeMidis.has(k.m) ? 3 : 1}
         />
       ))}
       {referenceKey && (
@@ -582,6 +642,18 @@ async function handleSaveProgression() {
     } catch (err) {
       console.error(err);
       setAudioError("Audio couldn't start. Tap the play button again, or check your device isn't muted.");
+    }
+  }
+
+  async function playPianoNote(midi) {
+    try {
+      await unlockAudio();
+      const synth = await ensureSynth();
+      setAudioError(null);
+      synth.triggerAttackRelease(freq(midi), 1.2);
+    } catch (err) {
+      console.error(err);
+      setAudioError("Audio couldn't start. Tap the key again, or check your device isn't muted.");
     }
   }
 
@@ -1231,6 +1303,14 @@ async function handleSaveProgression() {
           border: 1px solid var(--hair);
           border-radius: 8px;
           overflow-x: auto;
+        }
+        .vl-piano-key {
+          outline: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .vl-piano-key:focus-visible {
+          stroke: #F6D18A;
+          stroke-width: 3px;
         }
         .vl-chip {
           font-family: 'JetBrains Mono', monospace;
@@ -1961,7 +2041,7 @@ async function handleSaveProgression() {
                 ))}
               </div>
               <div className="vl-piano-wrap">
-                <PianoKeys midis={notes} flats={key.flats} />
+                <PianoKeys midis={notes} flats={key.flats} onNotePlay={playPianoNote} />
               </div>
               <div className="vl-inspect-actions">
                 <div className="vl-play-group">
@@ -2064,7 +2144,11 @@ async function handleSaveProgression() {
                 </div>
               )}
               <div className="vl-piano-wrap">
-                <PianoKeys midis={currentNotes} flats={key.flats} />
+                <PianoKeys
+                  midis={currentNotes}
+                  flats={key.flats}
+                  onNotePlay={playPianoNote}
+                />
               </div>
               {showNegativeHarmony && (
                 <div className="vl-negative-shadow">
@@ -2117,7 +2201,11 @@ async function handleSaveProgression() {
                     </div>
                   </div>
                   <div className="vl-piano-wrap">
-                    <PianoKeys midis={negativeNotes} flats={negativeUsesFlats} />
+                    <PianoKeys
+                      midis={negativeNotes}
+                      flats={negativeUsesFlats}
+                      onNotePlay={playPianoNote}
+                    />
                   </div>
                 </div>
               )}
@@ -2181,6 +2269,7 @@ async function handleSaveProgression() {
                         midis={result.notes}
                         flats={result.useFlats}
                         ariaLabel={`Piano keyboard showing ${result.explanation}`}
+                        onNotePlay={playPianoNote}
                       />
                     </div>
                   </div>
@@ -2294,7 +2383,11 @@ async function handleSaveProgression() {
                       </div>
                     </div>
                     <div className="vl-piano-wrap">
-                      <PianoKeys midis={selectedNotes} flats={r.flats} />
+                      <PianoKeys
+                        midis={selectedNotes}
+                        flats={r.flats}
+                        onNotePlay={playPianoNote}
+                      />
                     </div>
                 </div>
               );

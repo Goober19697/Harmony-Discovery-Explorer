@@ -8,7 +8,7 @@ import {
   CHORD_PATTERNS,
   QUALITIES,
 } from "../src/chordPatterns.js";
-import { parseVoicing } from "../src/noteParsing.js";
+import { formatOrderedNotes, parseVoicing } from "../src/noteParsing.js";
 
 function label(notes) {
   return chordLabel(parseVoicing(notes).midis);
@@ -48,8 +48,8 @@ test("candidate generation and direct recognition share the chord registry", () 
 });
 
 test("minor-major-seven formulas are not reinterpreted as altered dominants", () => {
-  assert.equal(label("A C Eb G#"), "Am(maj7)b5");
-  assert.equal(label("A C E G#"), "Am(maj7)");
+  assert.equal(label("A C Eb G#"), "AmMaj7b5");
+  assert.equal(label("A C E G#"), "AmMaj7");
   assert.equal(label("A C Eb G"), "Am7b5");
 });
 
@@ -64,7 +64,7 @@ test("ordinary chord families retain their identities", () => {
     ["A C E G", "Am7"],
     ["A C Eb G", "Am7b5"],
     ["A C Eb Gb", "Adim7"],
-    ["A C E G#", "Am(maj7)"],
+    ["A C E G#", "AmMaj7"],
   ];
 
   for (const [notes, expected] of examples) {
@@ -148,11 +148,56 @@ test("a complete C major-thirteen sharp-eleven is recognized from C", () => {
 });
 
 test("an interval-list analysis is used only when no conventional name exists", () => {
-  assert.equal(label("C Db E G"), "C#m(maj7)b5");
+  assert.equal(label("C Db E G"), "C#mMaj7b5");
 
   const labels = chordLabels(parseVoicing("C Db D G").midis);
   assert.match(labels[0], /^C\(/);
   assert.notEqual(labels[0], "Custom voicing");
+});
+
+test("minor-major extended families retain a complete tertian foundation", () => {
+  const examples = [
+    ["B D F# A#", "BmMaj7"],
+    ["B D F# A# C#", "BmMaj9"],
+    ["B D F# A# C# E", "BmMaj11"],
+    ["B D F# A# E", "BmMaj11"],
+    ["B D F# A# C# E G#", "BmMaj13"],
+    ["B D F# A# C# G#", "BmMaj13"],
+    ["B D F# A# G#", "BmMaj7(add13)"],
+  ];
+
+  for (const [notes, expected] of examples) {
+    assert.equal(label(notes), expected, notes);
+  }
+});
+
+test("complex inverted pitch collections prefer BmMaj11 over bass-root interval notation", () => {
+  const notes = parseVoicing("D4 Bb3 Gb4 E4 B4").midis;
+
+  assert.equal(chordLabel(notes), "BmMaj11");
+  assert.doesNotMatch(chordLabel(notes), /^A#?\(/);
+  assert.equal(
+    formatOrderedNotes(notes, { useFlats: false }),
+    "D4 A♯3 F♯4 E4 B4",
+  );
+});
+
+test("ordinary B chord families remain distinct", () => {
+  const examples = [
+    ["B D# F# A#", "Bmaj7"],
+    ["B D F# A", "Bm7"],
+    ["B D F# A C#", "Bm9"],
+    ["B D F# A C# E", "Bm11"],
+    ["B D F# A#", "BmMaj7"],
+    ["B D F# A# C#", "BmMaj9"],
+    ["B D F# A# E", "BmMaj11"],
+    ["B D F A", "Bm7b5"],
+    ["B D F Ab", "Bdim7"],
+  ];
+
+  for (const [notes, expected] of examples) {
+    assert.equal(label(notes), expected, notes);
+  }
 });
 
 test("Negative Harmony naming prefers a conventional extended altered chord", () => {

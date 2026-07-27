@@ -80,7 +80,7 @@ test("diminished and half-diminished roots produce vii only", () => {
 });
 
 test("unsupported qualities do not produce standard interpretations", () => {
-  for (const quality of ["m(maj7)", "aug maj7", "aug", "(9,3,♭13)"]) {
+  for (const quality of ["mMaj7", "mMaj11", "aug maj7", "aug", "(9,3,♭13)"]) {
     assert.deepEqual(interpretations(`C${quality}`, "C", 0, quality), []);
   }
   assert.deepEqual(interpretations("Custom Voicing", "", 0, ""), []);

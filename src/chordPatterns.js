@@ -15,8 +15,18 @@ export const CHORD_PATTERNS = [
   { suffix: "m7", intervals: [0, 3, 7, 10] },
   { suffix: "m7b5", intervals: [0, 3, 6, 10] },
   { suffix: "dim7", intervals: [0, 3, 6, 9] },
-  { suffix: "m(maj7)", intervals: [0, 3, 7, 11] },
-  { suffix: "m(maj7)b5", intervals: [0, 3, 6, 11] },
+  { suffix: "mMaj7", intervals: [0, 3, 7, 11] },
+  { suffix: "mMaj7b5", intervals: [0, 3, 6, 11] },
+  { suffix: "mMaj9", intervals: [0, 3, 7, 11, 2] },
+  { suffix: "mMaj11", intervals: [0, 3, 7, 11, 2, 5] },
+  // Practical minor-major-11 voicing with the defining 11th present while
+  // the ninth is omitted.
+  { suffix: "mMaj11", intervals: [0, 3, 7, 11, 5] },
+  { suffix: "mMaj13", intervals: [0, 3, 7, 11, 2, 5, 9] },
+  // Common extended voicings may omit either the ninth or the eleventh.
+  { suffix: "mMaj13", intervals: [0, 3, 7, 11, 5, 9] },
+  { suffix: "mMaj13", intervals: [0, 3, 7, 11, 2, 9] },
+  { suffix: "mMaj7(add13)", intervals: [0, 3, 7, 11, 9] },
   { suffix: "aug maj7", intervals: [0, 4, 8, 11] },
   { suffix: "6/9", intervals: [0, 4, 7, 9, 2] },
   { suffix: "6/9♯11", intervals: [0, 4, 7, 9, 2, 6] },
