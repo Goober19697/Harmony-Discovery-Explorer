@@ -46,6 +46,23 @@ class AppConfigurationTests(unittest.TestCase):
         self.assertTrue(application.config["SESSION_COOKIE_SECURE"])
         self.assertEqual(application.config["SESSION_COOKIE_SAMESITE"], "Lax")
 
+    def test_production_allows_temporary_http_cookie_configuration(self):
+        with patch.dict(
+            os.environ,
+            {
+                "APP_ENV": "production",
+                "SECRET_KEY": "production-test-secret",
+                "FRONTEND_ORIGIN": "http://3.93.162.237",
+                "SESSION_COOKIE_SECURE": "false",
+                "SESSION_COOKIE_SAMESITE": "Lax",
+            },
+            clear=True,
+        ), self.assertWarnsRegex(RuntimeWarning, "temporary HTTP deployment"):
+            application = create_app()
+        self.assertTrue(application.config["SESSION_COOKIE_HTTPONLY"])
+        self.assertFalse(application.config["SESSION_COOKIE_SECURE"])
+        self.assertEqual(application.config["SESSION_COOKIE_SAMESITE"], "Lax")
+
 
 class HealthAndErrorTests(unittest.TestCase):
     def setUp(self):

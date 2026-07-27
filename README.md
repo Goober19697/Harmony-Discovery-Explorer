@@ -200,6 +200,18 @@ docker compose --env-file .env -f compose.prod.yaml ps
 The production `.env` file is managed only on the deployment host and is not
 committed to the repository.
 
+### Session cookies
+
+Production defaults to `SESSION_COOKIE_SECURE=true`. Keep this setting when the
+application is served over HTTPS. For a temporary deployment using only an HTTP
+public IP, set `SESSION_COOKIE_SECURE=false` in the host's production `.env` so
+the browser can return the session cookie with authenticated API requests.
+
+Keep `SESSION_COOKIE_SAMESITE=Lax`; the HTTP workaround does not require
+weakening SameSite behavior. The frontend continues to include credentials in
+all API requests. Restore `SESSION_COOKIE_SECURE=true` as soon as HTTPS is
+configured.
+
 ### Maintenance
 
 The legacy `voice-leading-explorer` container image and old deployment

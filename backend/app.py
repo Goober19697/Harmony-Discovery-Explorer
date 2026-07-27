@@ -52,7 +52,11 @@ def _validate_configuration(app):
     if environment == "production" and not app.config.get("FRONTEND_ORIGIN"):
         raise RuntimeError("FRONTEND_ORIGIN is required in production.")
     if environment == "production" and not app.config["SESSION_COOKIE_SECURE"]:
-        raise RuntimeError("SESSION_COOKIE_SECURE must be true in production.")
+        warnings.warn(
+            "SESSION_COOKIE_SECURE is false in production. Use this only for "
+            "a temporary HTTP deployment and enable it when HTTPS is available.",
+            RuntimeWarning,
+        )
     if not app.config.get("SECRET_KEY"):
         app.config["SECRET_KEY"] = "development-only-change-me"
         warnings.warn(
