@@ -103,3 +103,42 @@ test("Negative Harmony register optimization is deterministic and has no Shadow 
   assert.deepEqual(first, optimizeNegativeHarmonyRegister(raw, source));
   assert.ok(first.some(midi => midi < 41));
 });
+
+test("compact six-note sources produce compact nearby Negative Harmony voicings", () => {
+  const source = [53, 57, 60, 64, 67, 71]; // F3 A3 C4 E4 G4 B4
+  const raw = tonicNegativeHarmony(source, 0);
+  const optimized = optimizeNegativeHarmonyRegister(raw, source);
+  const gaps = optimized.slice(1).map((midi, index) => midi - optimized[index]);
+  const average = notes => notes.reduce((sum, midi) => sum + midi, 0) / notes.length;
+  const pitchClasses = notes => notes.map(midi => midi % 12).sort((a, b) => a - b);
+
+  assert.equal(optimized.length, 6);
+  assert.deepEqual(pitchClasses(optimized), pitchClasses(raw));
+  assert.ok(Math.max(...gaps) < 12);
+  assert.ok(Math.abs(average(optimized) - average(source)) <= 3);
+  assert.ok(optimized.at(-1) - optimized[0] <= 23);
+});
+
+test("compact placement beats a wider arrangement with comparable voice movement", () => {
+  const source = [53, 57, 60, 64, 67, 71];
+  const optimized = optimizeNegativeHarmonyRegister(
+    [48, 56, 65, 61, 70, 66],
+    source,
+  );
+
+  assert.equal(optimized.at(-1) - optimized[0], 18);
+  assert.ok(
+    optimized.slice(1).every((midi, index) => midi - optimized[index] < 12)
+  );
+});
+
+test("widely spaced source voicings retain their open spacing character", () => {
+  const source = [36, 48, 60, 72];
+  const raw = tonicNegativeHarmony(source, 0);
+  const optimized = optimizeNegativeHarmonyRegister(raw, source);
+
+  assert.ok(optimized.at(-1) - optimized[0] >= 30);
+  assert.ok(
+    optimized.slice(1).some((midi, index) => midi - optimized[index] >= 12)
+  );
+});

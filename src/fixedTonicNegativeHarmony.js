@@ -39,56 +39,94 @@ function compareMidiLists(a, b) {
   return a.length - b.length;
 }
 
-function negativeHarmonyRegisterScore(assigned, sourceVoicing) {
-  const candidate = assigned.slice().sort((a, b) => a - b);
-  const source = sourceVoicing.slice().sort((a, b) => a - b);
-  const sourceSpan = source.length > 1 ? source[source.length - 1] - source[0] : 0;
-  const candidateSpan = candidate.length > 1
-    ? candidate[candidate.length - 1] - candidate[0]
-    : 0;
-  const sourceAverage = source.reduce((sum, midi) => sum + midi, 0) / source.length;
-  const candidateAverage = candidate.reduce((sum, midi) => sum + midi, 0) / candidate.length;
-  const sourceMovement = candidate.reduce(
-    (sum, midi, index) => sum + Math.abs(midi - source[index]),
+function voicingMetrics(notes) {
+  const sorted = notes.slice().sort((a, b) => a - b);
+  const gaps = sorted.slice(1).map((midi, index) => midi - sorted[index]);
+  const average = sorted.reduce((sum, midi) => sum + midi, 0) / sorted.length;
+  const middle = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2
+    ? sorted[middle]
+    : (sorted[middle - 1] + sorted[middle]) / 2;
+  return {
+    sorted,
+    lowest: sorted[0],
+    highest: sorted[sorted.length - 1],
+    span: sorted.length > 1 ? sorted[sorted.length - 1] - sorted[0] : 0,
+    average,
+    median,
+    gaps,
+    maximumGap: gaps.length ? Math.max(...gaps) : 0,
+    averageGap: gaps.length
+      ? gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length
+      : 0,
+  };
+}
+
+function negativeHarmonyRegisterScore(candidateNotes, sourceMetrics) {
+  const candidate = voicingMetrics(candidateNotes);
+  const spanDifference = Math.abs(candidate.span - sourceMetrics.span);
+  const averageDifference = Math.abs(candidate.average - sourceMetrics.average);
+  const medianDifference = Math.abs(candidate.median - sourceMetrics.median);
+  const densityDifference = Math.abs(
+    candidate.averageGap - sourceMetrics.averageGap
+  );
+  const boundaryDifference =
+    Math.abs(candidate.lowest - sourceMetrics.lowest) +
+    Math.abs(candidate.highest - sourceMetrics.highest);
+  const movement = candidate.sorted.reduce(
+    (sum, midi, index) => sum + Math.abs(midi - sourceMetrics.sorted[index]),
     0
   );
-  let duplicatePitches = 0;
-  let largeGaps = 0;
-  let isolatedNotes = 0;
-  let crossings = 0;
 
-  for (let index = 1; index < assigned.length; index += 1) {
-    if (assigned[index] < assigned[index - 1]) crossings += 1;
-  }
-  for (let index = 1; index < candidate.length; index += 1) {
-    const gap = candidate[index] - candidate[index - 1];
-    if (gap === 0) duplicatePitches += 1;
-    if (gap > 12) largeGaps += gap - 12;
-  }
-  if (candidate.length > 1) {
-    isolatedNotes += Math.max(0, candidate[1] - candidate[0] - 12);
-    isolatedNotes += Math.max(
-      0,
-      candidate[candidate.length - 1] - candidate[candidate.length - 2] - 12
-    );
-  }
-
-  const lowExtreme = Math.max(0, source[0] - candidate[0] - 12);
-  const highExtreme = Math.max(
-    0,
-    candidate[candidate.length - 1] - source[source.length - 1] - 12
+  // Gap quality is relative to the source so naturally open source voicings
+  // retain their character, while compact sources reject isolated voices.
+  const gapPenalty = candidate.gaps.reduce((total, gap) => {
+    const beyondSource = Math.max(0, gap - sourceMetrics.maximumGap);
+    if (gap >= 12) return total + 1_000_000 + beyondSource ** 2 * 100_000;
+    if (gap >= 9) return total + 200_000 + beyondSource ** 2 * 30_000;
+    if (gap >= 7) return total + beyondSource ** 2 * 8_000;
+    return total + beyondSource ** 2 * 2_000;
+  }, 0);
+  const isolatedVoicePenalty = candidate.gaps.reduce(
+    (total, gap) =>
+      total + Math.max(0, gap - Math.max(8, sourceMetrics.maximumGap + 2)) ** 2 *
+        150_000,
+    0
   );
-  const spanGrowth = Math.max(0, candidateSpan - sourceSpan);
 
-  return duplicatePitches * 10_000_000 +
-    isolatedNotes * 1_000_000 +
-    largeGaps * 500_000 +
-    crossings * 100_000 +
-    sourceMovement * 10_000 +
-    Math.abs(candidateAverage - sourceAverage) * 2_000 +
-    spanGrowth * 1_000 +
-    Math.abs(candidateSpan - sourceSpan) * 100 +
-    (lowExtreme + highExtreme) * 10_000;
+  // Source span is the density template. Going past its soft allowance is
+  // possible, but deliberately much costlier than modest voice movement.
+  const preferredMaximumSpan = sourceMetrics.span +
+    Math.max(5, Math.round(sourceMetrics.span * 0.25));
+  const excessiveSpan = Math.max(0, candidate.span - preferredMaximumSpan);
+  const score =
+    spanDifference * 200_000 +
+    averageDifference * 80_000 +
+    medianDifference * 30_000 +
+    gapPenalty +
+    densityDifference * 60_000 +
+    boundaryDifference * 35_000 +
+    movement * 3_000 +
+    isolatedVoicePenalty +
+    excessiveSpan ** 2 * 500_000;
+
+  return {
+    score,
+    span: candidate.span,
+    maximumGap: candidate.maximumGap,
+    averageDifference,
+    movement,
+  };
+}
+
+function compareScoredCandidates(a, b) {
+  if (!b) return -1;
+  return a.score - b.score ||
+    a.span - b.span ||
+    a.maximumGap - b.maximumGap ||
+    a.averageDifference - b.averageDifference ||
+    a.movement - b.movement ||
+    compareMidiLists(a.notes, b.notes);
 }
 
 // This is intentionally separate from Shadow Voicing normalization: it has no
@@ -104,38 +142,48 @@ export function optimizeNegativeHarmonyRegister(
     sourceVoicing.length !== negativeHarmonyNotes.length
   ) return [];
 
-  const source = sourceVoicing.slice().sort((a, b) => a - b);
-  const sourceCenter = source.reduce((sum, midi) => sum + midi, 0) / source.length;
-  const placements = negativeHarmonyNotes.map(note => {
-    const targetPitchClass = pitchClass(note);
-    const center = nearestMidiForPitchClass(Math.round(sourceCenter), targetPitchClass);
-    return [-24, -12, 0, 12, 24]
-      .map(offset => center + offset)
-      .filter(midi => midi >= 0 && midi <= 127);
-  });
-  let best = null;
-  let bestScore = Infinity;
+  const sourceMetrics = voicingMetrics(sourceVoicing);
 
-  function visit(index, assigned) {
-    if (index === placements.length) {
-      const candidate = assigned.slice().sort((a, b) => a - b);
-      const score = negativeHarmonyRegisterScore(assigned, source);
-      if (
-        score < bestScore ||
-        (score === bestScore && (!best || compareMidiLists(candidate, best) < 0))
-      ) {
-        best = candidate;
-        bestScore = score;
+  function search(expansion) {
+    const lower = Math.max(0, sourceMetrics.lowest - 12 - expansion);
+    const upper = Math.min(127, sourceMetrics.highest + 12 + expansion);
+    const placements = negativeHarmonyNotes.map(note => {
+      const notes = [];
+      const targetPitchClass = pitchClass(note);
+      const first = lower + pitchClass(targetPitchClass - lower);
+      for (let midi = first; midi <= upper; midi += 12) notes.push(midi);
+      return notes;
+    });
+    let best = null;
+
+    function visit(index, assigned, used) {
+      if (index === placements.length) {
+        const notes = assigned.slice().sort((a, b) => a - b);
+        const scored = {
+          ...negativeHarmonyRegisterScore(notes, sourceMetrics),
+          notes,
+        };
+        if (compareScoredCandidates(scored, best) < 0) best = scored;
+        return;
       }
-      return;
+      for (const midi of placements[index]) {
+        if (used.has(midi)) continue;
+        assigned.push(midi);
+        used.add(midi);
+        visit(index + 1, assigned, used);
+        used.delete(midi);
+        assigned.pop();
+      }
     }
-    for (const midi of placements[index]) {
-      assigned.push(midi);
-      visit(index + 1, assigned);
-      assigned.pop();
-    }
+
+    visit(0, [], new Set());
+    return best?.notes || null;
   }
 
-  visit(0, []);
-  return best || negativeHarmonyNotes.slice().sort((a, b) => a - b);
+  // The normal search is tightly bounded; expand only for repeated pitch
+  // classes that cannot receive unique MIDI placements in that region.
+  return search(0) ||
+    search(12) ||
+    search(24) ||
+    negativeHarmonyNotes.slice().sort((a, b) => a - b);
 }

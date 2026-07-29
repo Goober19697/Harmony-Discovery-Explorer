@@ -587,78 +587,90 @@ function optimizeNegativeHarmonyRegister(negativeNotes, sourceVoicing) {
   const source = [...sourceVoicing].sort((a, b) => a - b);
   const sourceAverage = source.reduce((sum, midi) => sum + midi, 0) / source.length;
   const sourceSpan = source.at(-1) - source[0];
-  const placements = negativeNotes.map(note => {
-    const targetPitchClass = ((note % 12) + 12) % 12;
-    const center = nearestMidiForDerivedNegativePitchClass(
-      Math.round(sourceAverage),
-      targetPitchClass,
-    );
-    return [-24, -12, 0, 12, 24]
-      .map(offset => center + offset)
-      .filter(midi => midi >= 0 && midi <= 127);
-  });
-  let best = null;
-  let bestScore = Infinity;
+  const sourceGaps = source.slice(1).map((midi, index) => midi - source[index]);
+  const sourceMaximumGap = sourceGaps.length ? Math.max(...sourceGaps) : 0;
+  const sourceAverageGap = sourceGaps.length
+    ? sourceGaps.reduce((sum, gap) => sum + gap, 0) / sourceGaps.length
+    : 0;
 
-  function score(assigned) {
-    const candidate = [...assigned].sort((a, b) => a - b);
+  function score(candidate) {
+    const gaps = candidate.slice(1).map((midi, index) => midi - candidate[index]);
     const candidateAverage = candidate.reduce((sum, midi) => sum + midi, 0) /
       candidate.length;
     const candidateSpan = candidate.at(-1) - candidate[0];
+    const candidateAverageGap = gaps.length
+      ? gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length
+      : 0;
     const movement = candidate.reduce(
       (sum, midi, index) => sum + Math.abs(midi - source[index]),
       0,
     );
-    let duplicates = 0;
-    let largeGaps = 0;
-    let crossings = 0;
-    for (let index = 1; index < assigned.length; index += 1) {
-      if (assigned[index] < assigned[index - 1]) crossings += 1;
-      const gap = candidate[index] - candidate[index - 1];
-      if (gap === 0) duplicates += 1;
-      if (gap > 12) largeGaps += gap - 12;
-    }
-    const isolated = candidate.length > 1
-      ? Math.max(0, candidate[1] - candidate[0] - 12) +
-        Math.max(0, candidate.at(-1) - candidate.at(-2) - 12)
-      : 0;
-    const extremes = Math.max(0, source[0] - candidate[0] - 12) +
-      Math.max(0, candidate.at(-1) - source.at(-1) - 12);
-    return duplicates * 10_000_000 +
-      isolated * 1_000_000 +
-      largeGaps * 500_000 +
-      crossings * 100_000 +
-      movement * 10_000 +
-      Math.abs(candidateAverage - sourceAverage) * 2_000 +
-      Math.max(0, candidateSpan - sourceSpan) * 1_000 +
-      Math.abs(candidateSpan - sourceSpan) * 100 +
-      extremes * 10_000;
+    const gapPenalty = gaps.reduce((total, gap) => {
+      const excess = Math.max(0, gap - sourceMaximumGap);
+      if (gap >= 12) return total + 1_000_000 + excess ** 2 * 100_000;
+      if (gap >= 9) return total + 200_000 + excess ** 2 * 30_000;
+      if (gap >= 7) return total + excess ** 2 * 8_000;
+      return total + excess ** 2 * 2_000;
+    }, 0);
+    const preferredMaximumSpan = sourceSpan +
+      Math.max(5, Math.round(sourceSpan * 0.25));
+    return Math.abs(candidateSpan - sourceSpan) * 200_000 +
+      Math.abs(candidateAverage - sourceAverage) * 80_000 +
+      gapPenalty +
+      Math.abs(candidateAverageGap - sourceAverageGap) * 60_000 +
+      (Math.abs(candidate[0] - source[0]) +
+        Math.abs(candidate.at(-1) - source.at(-1))) * 35_000 +
+      movement * 3_000 +
+      gaps.reduce(
+        (total, gap) => total +
+          Math.max(0, gap - Math.max(8, sourceMaximumGap + 2)) ** 2 * 150_000,
+        0,
+      ) +
+      Math.max(0, candidateSpan - preferredMaximumSpan) ** 2 * 500_000;
   }
 
-  function visit(index, assigned) {
-    if (index === placements.length) {
-      const candidate = [...assigned].sort((a, b) => a - b);
-      const candidateScore = score(assigned);
-      const tieBreak = !best || candidate.some(
-        (midi, noteIndex) => midi !== best[noteIndex] &&
-          midi < best[noteIndex] &&
-          candidate.slice(0, noteIndex).every((value, i) => value === best[i]),
-      );
-      if (candidateScore < bestScore || (candidateScore === bestScore && tieBreak)) {
-        best = candidate;
-        bestScore = candidateScore;
+  function search(expansion) {
+    const lower = Math.max(0, source[0] - 12 - expansion);
+    const upper = Math.min(127, source.at(-1) + 12 + expansion);
+    const placements = negativeNotes.map(note => {
+      const pitchClass = ((note % 12) + 12) % 12;
+      const values = [];
+      const first = lower + ((pitchClass - lower) % 12 + 12) % 12;
+      for (let midi = first; midi <= upper; midi += 12) values.push(midi);
+      return values;
+    });
+    let best = null;
+    let bestScore = Infinity;
+
+    function visit(index, assigned, used) {
+      if (index === placements.length) {
+        const candidate = [...assigned].sort((a, b) => a - b);
+        const candidateScore = score(candidate);
+        const tieBreak = !best ||
+          candidate.length > 1 && candidate.at(-1) - candidate[0] <
+            best.at(-1) - best[0] ||
+          candidate.join(",") < best.join(",");
+        if (candidateScore < bestScore || (candidateScore === bestScore && tieBreak)) {
+          best = candidate;
+          bestScore = candidateScore;
+        }
+        return;
       }
-      return;
+      for (const midi of placements[index]) {
+        if (used.has(midi)) continue;
+        assigned.push(midi);
+        used.add(midi);
+        visit(index + 1, assigned, used);
+        used.delete(midi);
+        assigned.pop();
+      }
     }
-    for (const midi of placements[index]) {
-      assigned.push(midi);
-      visit(index + 1, assigned);
-      assigned.pop();
-    }
+    visit(0, [], new Set());
+    return best;
   }
 
-  visit(0, []);
-  return best || [...negativeNotes].sort((a, b) => a - b);
+  return search(0) || search(12) || search(24) ||
+    [...negativeNotes].sort((a, b) => a - b);
 }
 
 const CONVENTIONAL_ROOT_NAMES = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"];
