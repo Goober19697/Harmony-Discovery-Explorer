@@ -87,9 +87,10 @@ function comparePitchLists(a, b) {
 
 // This runs only after the exact mirror has been calculated. Every candidate
 // retains one voice of the same pitch class for every raw voice.
-export function normalizeShadowVoicing(rawMidis) {
+export function normalizeShadowVoicingRegister(rawMidis) {
   if (!rawMidis || rawMidis.length === 0) return [];
   const raw = rawMidis.slice().sort((a, b) => a - b);
+  if (raw.every(midi => midi >= SHADOW_MIN_MIDI)) return raw;
   const minimallyRaised = raw.map(midi => {
     let pitch = midi;
     while (pitch < SHADOW_MIN_MIDI) pitch += 12;
@@ -123,8 +124,11 @@ export function normalizeShadowVoicing(rawMidis) {
   return best || minimallyRaised.sort((a, b) => a - b);
 }
 
+// Backwards-compatible descriptive alias used by existing callers and tests.
+export const normalizeShadowVoicing = normalizeShadowVoicingRegister;
+
 export function shadowVoicing(midis) {
-  return normalizeShadowVoicing(negativeHarmony(midis));
+  return normalizeShadowVoicingRegister(negativeHarmony(midis));
 }
 
 // Shadow harmony can land in an inversion, so its harmonic root must come from

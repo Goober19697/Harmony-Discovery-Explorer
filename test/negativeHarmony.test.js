@@ -52,6 +52,10 @@ test("register normalization leaves an already musical voicing at or above F2 un
   assert.deepEqual(normalizeShadowVoicing([53, 57, 60]), [53, 57, 60]);
 });
 
+test("F2 is accepted as the unchanged lowest Shadow note", () => {
+  assert.deepEqual(normalizeShadowVoicing([41, 48, 55]), [41, 48, 55]);
+});
+
 test("register normalization raises one sub-F2 pitch by octaves", () => {
   assert.deepEqual(normalizeShadowVoicing([40, 48, 55]), [52, 60, 67]);
 });

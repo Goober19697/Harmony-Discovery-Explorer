@@ -24,6 +24,15 @@ test("the piano and existing analyzer receive the transformed MIDI sequence", as
   assert.match(source, /<PianoKeys\s+midis=\{result\.notes\}/s);
 });
 
+test("each interpretation independently optimizes its identified chord near the source register", async () => {
+  const source = await readFile(explorerUrl, "utf8");
+
+  assert.match(
+    source,
+    /functionalInterpretations\.map\(interpretation =>[\s\S]*?const rawNotes = tonicNegativeHarmony\([\s\S]*?const analysis = analyzeNegativeHarmonyVoicing\(analysisNotes\)[\s\S]*?const notes = optimizeNegativeHarmonyRegister\(rawNotes, currentNotes\)/,
+  );
+});
+
 test("each Negative Harmony result displays its interpretation and chord analysis compactly", async () => {
   const source = await readFile(explorerUrl, "utf8");
 

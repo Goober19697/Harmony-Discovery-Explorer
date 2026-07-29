@@ -15,7 +15,10 @@ import {
   shadowVoicing,
   shadowVoicingSourceDescription,
 } from "./negativeHarmony.js";
-import { tonicNegativeHarmony } from "./fixedTonicNegativeHarmony.js";
+import {
+  optimizeNegativeHarmonyRegister,
+  tonicNegativeHarmony,
+} from "./fixedTonicNegativeHarmony.js";
 import { chordRootFromName } from "./chordRoot.js";
 import { functionalNegativeHarmonyInterpretations } from "./functionalNegativeHarmony.js";
 import {
@@ -718,11 +721,11 @@ async function handleSaveProgression() {
   );
   const negativeHarmonyResults = useMemo(
     () => functionalInterpretations.map(interpretation => {
-      const notes = tonicNegativeHarmony(
+      const rawNotes = tonicNegativeHarmony(
         currentNotes,
         interpretation.impliedTonicPitchClass,
       );
-      const analysisNotes = notes.slice().sort((a, b) => a - b);
+      const analysisNotes = rawNotes.slice().sort((a, b) => a - b);
       const analysis = analyzeNegativeHarmonyVoicing(analysisNotes);
       const useResultFlats = inferUseFlats(
         interpretation.impliedTonicName,
@@ -730,6 +733,7 @@ async function handleSaveProgression() {
       );
       const chordName = labelForAnalysis(analysis, useResultFlats);
       const intervalQualities = intervalQualitiesForAnalysis(analysis);
+      const notes = optimizeNegativeHarmonyRegister(rawNotes, currentNotes);
       const id = `${interpretation.interpretationType}-${interpretation.functionDegree ?? "root"}-${interpretation.impliedTonicPitchClass}`;
       return {
         ...interpretation,
