@@ -10,9 +10,9 @@ import {
   spellMidiForChord,
 } from "./noteParsing.js";
 import {
-  negativeHarmony,
   negativeHarmonyLabel,
   negativeHarmonyUsesFlats,
+  shadowVoicing,
   shadowVoicingSourceDescription,
 } from "./negativeHarmony.js";
 import { tonicNegativeHarmony } from "./fixedTonicNegativeHarmony.js";
@@ -694,7 +694,7 @@ async function handleSaveProgression() {
 
   const parsed = useMemo(() => parseVoicing(committedText), [committedText]);
   const currentNotes = parsed && parsed.midis.length ? parsed.midis : null;
-  const negativeNotes = useMemo(() => negativeHarmony(currentNotes), [currentNotes]);
+  const negativeNotes = useMemo(() => shadowVoicing(currentNotes), [currentNotes]);
   const negativeUsesFlats = useMemo(() => negativeHarmonyUsesFlats(negativeNotes), [negativeNotes]);
   const currentAnalysis = useMemo(() => analyzeVoicing(currentNotes), [currentNotes]);
   const useFlats = inferUseFlats(committedText, currentAnalysis?.rootPc);

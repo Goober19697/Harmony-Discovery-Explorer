@@ -458,6 +458,102 @@ function negativeHarmony(midis) {
     .sort((a, b) => a - b);
 }
 
+const SHADOW_MIN_MIDI = 41;
+
+function normalizeShadowVoicing(rawMidis) {
+  if (!rawMidis || rawMidis.length === 0) return [];
+  const raw = rawMidis.slice().sort((a, b) => a - b);
+  const placements = raw.map(midi => {
+    const pitchClass = ((midi % 12) + 12) % 12;
+    const first = SHADOW_MIN_MIDI +
+      ((pitchClass - SHADOW_MIN_MIDI % 12 + 12) % 12);
+    let center = midi;
+    while (center < SHADOW_MIN_MIDI) center += 12;
+    const pitches = [];
+    for (
+      let pitch = Math.max(first, center - 24);
+      pitch <= Math.max(77, center + 24);
+      pitch += 12
+    ) pitches.push(pitch);
+    return pitches;
+  });
+  let best = null;
+  let bestScore = Infinity;
+
+  function score(assigned) {
+    const sounding = assigned.slice().sort((a, b) => a - b);
+    let duplicates = 0;
+    let crossings = 0;
+    let lowCompression = 0;
+    let compression = 0;
+    let largeGaps = 0;
+    for (let index = 1; index < assigned.length; index += 1) {
+      if (assigned[index] < assigned[index - 1]) crossings += 1;
+    }
+    for (let index = 1; index < sounding.length; index += 1) {
+      const gap = sounding[index] - sounding[index - 1];
+      if (gap === 0) duplicates += 1;
+      if (sounding[index - 1] < 48 && gap < 3) lowCompression += 3 - gap;
+      else if (gap < 2) compression += 2 - gap;
+      if (gap > 12) largeGaps += gap - 12;
+    }
+    const span = sounding.length > 1
+      ? sounding[sounding.length - 1] - sounding[0]
+      : 0;
+    const excessiveSpan = Math.max(
+      0,
+      span - (12 + Math.max(0, sounding.length - 3) * 3)
+    );
+    const displacement = assigned.reduce(
+      (total, pitch, index) => total + Math.abs(pitch - raw[index]),
+      0
+    );
+    return duplicates * 10_000_000 +
+      lowCompression * 1_000_000 +
+      crossings * 100_000 +
+      largeGaps * 10_000 +
+      compression * 1_000 +
+      excessiveSpan * 100 +
+      span * 10 +
+      displacement;
+  }
+
+  function lexicallyBefore(a, b) {
+    if (!b) return true;
+    for (let index = 0; index < a.length; index += 1) {
+      if (a[index] !== b[index]) return a[index] < b[index];
+    }
+    return false;
+  }
+
+  function visit(index, assigned) {
+    if (index === placements.length) {
+      const candidateScore = score(assigned);
+      const sounding = assigned.slice().sort((a, b) => a - b);
+      if (
+        candidateScore < bestScore ||
+        (candidateScore === bestScore && lexicallyBefore(sounding, best))
+      ) {
+        best = sounding;
+        bestScore = candidateScore;
+      }
+      return;
+    }
+    for (const pitch of placements[index]) {
+      assigned.push(pitch);
+      visit(index + 1, assigned);
+      assigned.pop();
+    }
+  }
+
+  visit(0, []);
+  return best || [];
+}
+
+function shadowVoicing(midis) {
+  return normalizeShadowVoicing(negativeHarmony(midis));
+}
+
 function derivedNegativePitchClass(originalPitchClass, tonicPitchClass) {
   if (!Number.isInteger(tonicPitchClass)) return null;
   return (
@@ -789,7 +885,7 @@ function HarmonyDiscoveryExplorer() {
 
   const parsed = useMemo(() => parseVoicing(committedText), [committedText]);
   const currentNotes = parsed && parsed.midis.length ? parsed.midis : null;
-  const negativeNotes = useMemo(() => negativeHarmony(currentNotes), [currentNotes]);
+  const negativeNotes = useMemo(() => shadowVoicing(currentNotes), [currentNotes]);
   const negativeUsesFlats = useMemo(() => negativeHarmonyUsesFlats(negativeNotes), [negativeNotes]);
   const key = { flats: useFlats };
   const analyzedCurrentLabel = useMemo(
